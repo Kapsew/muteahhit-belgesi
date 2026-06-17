@@ -6,3 +6,5 @@ dist
 *.log
 .DS_Store
 **/.DS_Store
+.yedek-linkler/
+.yedek-hizli-hesap/

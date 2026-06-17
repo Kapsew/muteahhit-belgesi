@@ -6,9 +6,10 @@ interface Props {
   setIletisim: (i: OturumDurumu["iletisim"]) => void;
   onGeri: () => void;
   onOde: () => void;
+  gonderiliyor?: boolean;
 }
 
-export function AdimIletisim({ iletisim, setIletisim, onGeri, onOde }: Props) {
+export function AdimIletisim({ iletisim, setIletisim, onGeri, onOde, gonderiliyor = false }: Props) {
   const upd = (patch: Partial<OturumDurumu["iletisim"]>) => setIletisim({ ...iletisim, ...patch });
 
   const valid =
@@ -99,10 +100,10 @@ export function AdimIletisim({ iletisim, setIletisim, onGeri, onOde }: Props) {
           </div>
           <button
             onClick={onOde}
-            disabled={!valid}
+            disabled={!valid || gonderiliyor}
             className="px-5 py-2.5 bg-[#047857] hover:bg-[#065F46] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg flex items-center gap-1.5"
           >
-            Ödemeye geç <ArrowRight className="w-4 h-4" />
+            {gonderiliyor ? "İşleniyor…" : <>Hesapla ve devam et <ArrowRight className="w-4 h-4" /></>}
           </button>
         </div>
         <div className="mt-3 space-y-2">

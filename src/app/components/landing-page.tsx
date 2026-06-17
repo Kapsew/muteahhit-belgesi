@@ -186,7 +186,7 @@ export function LandingPage() {
                   <User className="w-4 h-4" /> Giriş Yap
                 </button>
                 <button
-                  onClick={() => navigate("/wizard")}
+                  onClick={() => navigate("/hizli-hesap")}
                   className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-5 py-2 rounded-lg text-sm transition-colors"
                 >
                   Hemen Başla
@@ -212,7 +212,7 @@ export function LandingPage() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl text-white leading-tight mb-6">Müteahhitlik Belgesi Başvurunuzu<br /><span className="text-[#C9952B]">Profesyonel Ekiple</span> Tamamlayın</h1>
             <p className="text-white/70 text-lg mb-10 max-w-lg"><span className="font-bold">Bakanlık süreçleri ve evrak trafiğiyle boğuşmayın.</span> Uzman analizimle hatalı harç ödemelerini engelleyelim, başvurunuzu yasal mevzuata tam uyumlu şekilde sonuçlandıralım.</p>
             <button
-              onClick={() => navigate(user ? "/dashboard" : "/wizard")}
+              onClick={() => navigate(user ? "/dashboard" : "/hizli-hesap")}
               className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-10 py-4 rounded-xl text-base flex items-center justify-center gap-2 transition-colors"
             >
               {user ? "Panelime Git" : "Analize Başla"} <ArrowRight className="w-5 h-5" />
@@ -326,7 +326,7 @@ export function LandingPage() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => navigate("/wizard")} className="w-full bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] py-3 rounded-xl transition-colors">
+            <button onClick={() => navigate("/hizli-hesap")} className="w-full bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] py-3 rounded-xl transition-colors">
               Analize Başla
             </button>
           </div>
@@ -442,13 +442,13 @@ export function LandingPage() {
           <p className="text-white/60 mb-8">Sınıf tayini analizinizi başlatın, profesyonel ekibimizle başvurunuzu tamamlayın.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => navigate("/wizard")}
+              onClick={() => navigate("/hizli-hesap")}
               className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-10 py-4 rounded-xl text-base inline-flex items-center gap-2 transition-colors"
             >
               Analize Başla <ArrowRight className="w-5 h-5" />
             </button>
             <button
-              onClick={() => navigate("/analiz-talebi")}
+              onClick={() => navigate("/hizli-hesap")}
               className="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-8 py-4 rounded-xl text-base inline-flex items-center gap-2 transition-colors"
             >
               Ücretsiz Analiz Talebi
@@ -495,7 +495,7 @@ export function LandingPage() {
                 <p className="text-xs text-[#5A6478]">
                   Henüz hesabınız yok mu?{" "}
                   <button
-                    onClick={() => { setShowAuth(false); navigate("/wizard"); }}
+                    onClick={() => { setShowAuth(false); navigate("/hizli-hesap"); }}
                     className="text-[#C9952B] hover:underline"
                   >
                     Önce analiz başlatın

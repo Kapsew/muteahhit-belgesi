@@ -1963,7 +1963,7 @@ export function DashboardPage() {
           <Award className="w-12 h-12 text-[#C9952B] mx-auto mb-4" />
           <h2 className="text-lg font-bold text-[#0B1D3A] mb-2">Başvurunuzu oluşturun</h2>
           <p className="text-sm text-[#5A6478] mb-6">Müteahhitlik belgesi grubunuzu öğrenmek için başvuru formunu doldurun.</p>
-          <button onClick={() => navigate("/wizard")}
+          <button onClick={() => navigate("/hizli-hesap")}
             className="w-full bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] font-medium py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
             <ArrowRight className="w-4 h-4" /> Başvuru Formunu Doldurun
           </button>

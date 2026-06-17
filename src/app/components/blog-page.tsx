@@ -120,7 +120,7 @@ export function BlogPage() {
               </button>
             ) : null}
             <button
-              onClick={() => navigate("/wizard")}
+              onClick={() => navigate("/hizli-hesap")}
               className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-5 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               Analizi Başlat
@@ -272,7 +272,7 @@ export function BlogPage() {
             olduğunu öğrenin.
           </p>
           <button
-            onClick={() => navigate("/wizard")}
+            onClick={() => navigate("/hizli-hesap")}
             className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-8 py-3 rounded-xl text-sm font-semibold transition-colors inline-flex items-center gap-2"
           >
             Ücretsiz Analiz Başlat <ArrowRight className="w-4 h-4" />

@@ -1,0 +1,207 @@
+// ====================================================================
+// AdimRapor.tsx
+// Hesaplama sonucunu detaylı gösterir. Ödeme yapılmadıysa blur'lu.
+// "Test ödeme" butonu durumu ilerletip blur'u kaldırır.
+// (İleride gerçek rapor şablonuyla değiştirilecek.)
+// ====================================================================
+
+import { useState } from "react";
+import { Lock, CheckCircle2, FileText, TrendingUp, AlertCircle } from "lucide-react";
+import type { TamHesaplama, HesaplananIs } from "../hesaplama-motor";
+import { testOdemeTamamla } from "./kayit";
+
+interface Props {
+  hesap: TamHesaplama;
+  companyId: string;
+  firmaUnvani: string;
+}
+
+function tl(n: number): string {
+  return (n || 0).toLocaleString("tr-TR") + " ₺";
+}
+
+export function AdimRapor({ hesap, companyId, firmaUnvani }: Props) {
+  const [odendi, setOdendi] = useState(false);
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+
+  const odemeYap = async () => {
+    setHata(null);
+    setYukleniyor(true);
+    try {
+      await testOdemeTamamla(companyId);
+      setOdendi(true);
+    } catch (e: any) {
+      setHata(e.message || "Ödeme sırasında hata oluştu");
+    } finally {
+      setYukleniyor(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Sonuç başlığı — her zaman görünür */}
+      <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6 text-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#047857]/10 text-[#047857] flex items-center justify-center">
+          <CheckCircle2 className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-semibold text-[#0B1D3A]">Analiz tamamlandı</h2>
+        <p className="text-sm text-[#5A6478] mt-1">{firmaUnvani}</p>
+        <div className="mt-4 inline-block px-6 py-3 rounded-xl bg-[#0B1D3A] text-white">
+          <span className="text-xs opacity-70 block">Hesaplanan yetki grubu</span>
+          {odendi ? (
+            <span className="text-3xl font-bold text-[#C9952B]">{hesap.tercihEdilenGrup}</span>
+          ) : (
+            <span className="text-3xl font-bold text-[#C9952B] inline-flex items-center gap-1.5">
+              <Lock className="w-5 h-5" /> ●●
+            </span>
+          )}
+        </div>
+        {odendi ? (
+          <p className="text-xs text-[#5A6478] mt-3">
+            Tercih edilen yöntem:{" "}
+            <strong>{hesap.tercihEdilenYontem === "son5" ? "Son 5 Yıl" : "Son 15 Yıl"}</strong> —
+            Toplam: <strong>{tl(hesap.tercihEdilenToplam)}</strong>
+          </p>
+        ) : (
+          <p className="text-xs text-[#5A6478] mt-3">
+            Analiziniz hazır. Yetki grubunuzu ve tüm detayları görmek için ödemeyi tamamlayın.
+          </p>
+        )}
+      </div>
+
+      {/* Detay bölümü — ödeme yapılmadıysa blur */}
+      <div className="relative">
+        {!odendi && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/40 backdrop-blur-md">
+            <div className="text-center bg-white border border-[#E8E4DC] rounded-2xl p-6 max-w-xs shadow-lg">
+              <Lock className="w-8 h-8 mx-auto text-[#C9952B] mb-2" />
+              <h3 className="text-sm font-semibold text-[#0B1D3A] mb-1">Detaylı rapor kilitli</h3>
+              <p className="text-xs text-[#5A6478] mb-4">
+                Tüm hesaplama detaylarına, iş bazlı tutarlara ve yöntem karşılaştırmasına
+                ulaşmak için ödemeyi tamamlayın.
+              </p>
+              <div className="mb-3 p-2 bg-gray-50 rounded-lg">
+                <span className="text-xs text-[#5A6478]">Yeterlilik analiz raporu</span>
+                <p className="text-lg font-semibold text-[#0B1D3A]">1.499 ₺</p>
+                <span className="text-[10px] text-gray-400">KDV dahildir</span>
+              </div>
+              {hata && <p className="text-[11px] text-red-600 mb-2">{hata}</p>}
+              <button
+                onClick={odemeYap}
+                disabled={yukleniyor}
+                className="w-full px-4 py-2.5 bg-[#047857] hover:bg-[#065F46] disabled:opacity-50 text-white text-sm font-medium rounded-lg"
+              >
+                {yukleniyor ? "İşleniyor…" : "Ödemeyi tamamla (TEST)"}
+              </button>
+              <p className="text-[10px] text-gray-400 mt-2">
+                * Test ödemesidir, gerçek tahsilat yapılmaz.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Asıl detay içerik (blur'un altında) */}
+        <div className={!odendi ? "pointer-events-none select-none" : ""}>
+          <DetayIcerik hesap={hesap} />
+        </div>
+      </div>
+
+      {odendi && (
+        <div className="bg-[#E1F5EE] border border-[#047857]/20 rounded-xl p-4 flex items-start gap-2.5">
+          <CheckCircle2 className="w-5 h-5 text-[#047857] flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-[#0B1D3A]">
+            Ödemeniz alındı. Raporunuza panelinizden de erişebilirsiniz. Uzman incelemesi
+            sonrası onaylı PDF rapor en geç 2 iş günü içinde iletilecektir.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetayIcerik({ hesap }: { hesap: TamHesaplama }) {
+  return (
+    <div className="space-y-4">
+      {/* Yöntem karşılaştırması */}
+      <div className="bg-white border border-[#E8E4DC] rounded-2xl p-5">
+        <h3 className="text-sm font-semibold text-[#0B1D3A] flex items-center gap-1.5 mb-3">
+          <TrendingUp className="w-4 h-4 text-[#C9952B]" /> Yöntem Karşılaştırması
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div className={`p-3 rounded-lg border ${hesap.tercihEdilenYontem === "son5" ? "border-[#047857] bg-[#047857]/5" : "border-[#E8E4DC]"}`}>
+            <p className="text-xs text-[#5A6478]">Son 5 Yıl (Y1)</p>
+            <p className="text-lg font-semibold text-[#0B1D3A]">{hesap.y1.grup}</p>
+            <p className="text-xs text-[#5A6478] mt-1">Net: {tl(hesap.y1.toplamNet)}</p>
+            <p className="text-[11px] text-gray-400">Brüt: {tl(hesap.y1.toplamBrut)}</p>
+          </div>
+          <div className={`p-3 rounded-lg border ${hesap.tercihEdilenYontem === "son15" ? "border-[#047857] bg-[#047857]/5" : "border-[#E8E4DC]"}`}>
+            <p className="text-xs text-[#5A6478]">Son 15 Yıl (Y2)</p>
+            <p className="text-lg font-semibold text-[#0B1D3A]">{hesap.y2.grup}</p>
+            <p className="text-xs text-[#5A6478] mt-1">Toplam: {tl(hesap.y2.toplam)}</p>
+            <p className="text-[11px] text-gray-400">En büyük: {tl(hesap.y2.enBuyukTutar)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* İş bazlı detay tablosu */}
+      <div className="bg-white border border-[#E8E4DC] rounded-2xl p-5">
+        <h3 className="text-sm font-semibold text-[#0B1D3A] flex items-center gap-1.5 mb-3">
+          <FileText className="w-4 h-4 text-[#C9952B]" /> İş Bazlı Tutarlar
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left text-[#5A6478] border-b border-[#E8E4DC]">
+                <th className="py-2 pr-2">Sözleşme</th>
+                <th className="py-2 pr-2">Sınıf</th>
+                <th className="py-2 pr-2">Alan m²</th>
+                <th className="py-2 pr-2 text-right">Belge Tutarı</th>
+                <th className="py-2 text-right">Güncel Değer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hesap.isler.map((is: HesaplananIs, i: number) => (
+                <tr key={is.id || i} className="border-b border-[#F0EDE6]">
+                  <td className="py-2 pr-2">{is.sozlesmeTarihi}</td>
+                  <td className="py-2 pr-2">{is.ruhsatSinifi}</td>
+                  <td className="py-2 pr-2">{is.insaatAlaniM2?.toLocaleString("tr-TR")}</td>
+                  <td className="py-2 pr-2 text-right">{tl(is.sonuc.belgeTutari)}</td>
+                  <td className="py-2 text-right font-medium text-[#0B1D3A]">{tl(is.sonuc.guncelTutar)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Üst gruba yükselme + mali yeterlilik */}
+      <div className="bg-white border border-[#E8E4DC] rounded-2xl p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-[#0B1D3A] flex items-center gap-1.5">
+          <AlertCircle className="w-4 h-4 text-[#C9952B]" /> Ek Bilgiler
+        </h3>
+        {hesap.birUstGrup && (
+          <p className="text-xs text-[#5A6478]">
+            Bir üst grup (<strong>{hesap.birUstGrup.grup}</strong>) için gereken minimum:{" "}
+            <strong>{tl(hesap.birUstGrup.min)}</strong>. Eksik tutar:{" "}
+            <strong className="text-[#C9952B]">{tl(hesap.eksikTutar)}</strong>
+          </p>
+        )}
+        {hesap.bankaRefTutari != null && (
+          <p className="text-xs text-[#5A6478]">
+            Banka referans tutarı: <strong>{tl(hesap.bankaRefTutari)}</strong>
+          </p>
+        )}
+        <p className="text-xs text-[#5A6478]">
+          Mali yeterlilik:{" "}
+          <strong>{hesap.maliYeterlilikGerekli ? "Gerekli" : "Gerekli değil"}</strong>
+        </p>
+        {hesap.diploma && (
+          <p className="text-xs text-[#5A6478]">
+            Diploma katkısı: <strong>{hesap.diploma.grup}</strong>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

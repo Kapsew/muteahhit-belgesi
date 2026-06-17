@@ -3,7 +3,11 @@ import { Stepper } from "./Stepper";
 import { AdimBelgeler } from "./AdimBelgeler";
 import { AdimMali } from "./AdimMali";
 import { AdimIletisim } from "./AdimIletisim";
+import { AdimRapor } from "./AdimRapor";
+import { hesaplaIsler } from "./hesapla-adapter";
+import { kayitYap, type KayitSonucu } from "./kayit";
 import type { Is, OturumDurumu } from "./types";
+import type { TamHesaplama } from "../hesaplama-motor";
 
 const BOS_ILETISIM: OturumDurumu["iletisim"] = {
   firmaUnvani: "",
@@ -21,27 +25,32 @@ export function HizliHesapPage() {
   const [isler, setIsler] = useState<Is[]>([]);
   const [maliBeyanname, setMaliBeyanname] = useState<File | null>(null);
   const [iletisim, setIletisim] = useState(BOS_ILETISIM);
-  const [tamamlandi, setTamamlandi] = useState(false);
 
-  const onOde = () => {
-    setTamamlandi(true);
+  const [hesap, setHesap] = useState<TamHesaplama | null>(null);
+  const [kayit, setKayit] = useState<KayitSonucu | null>(null);
+  const [gonderiliyor, setGonderiliyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+
+  const onOde = async () => {
+    setHata(null);
+    setGonderiliyor(true);
+    try {
+      const sonuc = hesaplaIsler(isler);
+      const kayitSonucu = await kayitYap(iletisim, isler, sonuc, maliBeyanname);
+      setHesap(sonuc);
+      setKayit(kayitSonucu);
+    } catch (e: any) {
+      setHata(e.message || "İşlem sırasında bir hata oluştu");
+    } finally {
+      setGonderiliyor(false);
+    }
   };
 
-  if (tamamlandi) {
+  if (hesap && kayit) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md text-center bg-white border border-[#E8E4DC] rounded-2xl p-8">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#047857]/10 text-[#047857] flex items-center justify-center">
-            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-medium text-[#0B1D3A] mb-2">Talebiniz alınmıştır</h2>
-          <p className="text-sm text-[#5A6478] leading-relaxed">
-            Analiz raporu uzmanlarımızın incelemesini takiben en geç 2 iş günü içerisinde{" "}
-            <strong className="text-[#0B1D3A]">{iletisim.eposta}</strong> adresine iletilecektir. Hesabınız bu e-posta ile
-            oluşturulmuştur.
-          </p>
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <AdimRapor hesap={hesap} companyId={kayit.companyId} firmaUnvani={iletisim.firmaUnvani} />
         </div>
       </div>
     );
@@ -69,12 +78,20 @@ export function HizliHesapPage() {
           />
         )}
         {adim === 2 && (
-          <AdimIletisim
-            iletisim={iletisim}
-            setIletisim={setIletisim}
-            onGeri={() => setAdim(1)}
-            onOde={onOde}
-          />
+          <>
+            {hata && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {hata}
+              </div>
+            )}
+            <AdimIletisim
+              iletisim={iletisim}
+              setIletisim={setIletisim}
+              onGeri={() => setAdim(1)}
+              onOde={onOde}
+              gonderiliyor={gonderiliyor}
+            />
+          </>
         )}
       </div>
     </div>
