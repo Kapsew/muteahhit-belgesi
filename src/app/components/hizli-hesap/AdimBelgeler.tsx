@@ -1,0 +1,431 @@
+import { useState, useRef, type DragEvent } from "react";
+import { CloudUpload, AlertTriangle, CornerDownRight, Plus, ChevronDown, Pencil, FileX } from "lucide-react";
+import type { Is, IsTuru } from "./types";
+import { type ReddedilenBelge } from "./claudeOcr";
+import { mockOcr } from "./mockOcr";
+const claudeOcr = mockOcr;
+
+const IS_TURU_LABEL: Record<IsTuru, string> = {
+  "kat-karsiligi": "Kat karşılığı",
+  "taahhut": "Taahhüt",
+  "kamu": "Kamu ihalesi",
+};
+
+function muteahhitInitials(unvan: string): string {
+  return unvan
+    .split(/\s+/)
+    .filter((w) => /[A-ZĞÜŞİÖÇ]/.test(w[0] || ""))
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase() || "—";
+}
+
+interface Props {
+  isler: Is[];
+  setIsler: (is: Is[]) => void;
+  onIleri: () => void;
+}
+
+export function AdimBelgeler({ isler, setIsler, onIleri }: Props) {
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [teyit, setTeyit] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const [reddedilen, setReddedilen] = useState<ReddedilenBelge[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const dosyaYukle = async (files: FileList | File[]) => {
+    const arr = Array.from(files);
+    if (arr.length === 0) return;
+    setHata(null);
+    setReddedilen([]);
+
+    if (arr.length > 1) {
+      setHata("Her seferinde yalnızca bir belge yükleyebilirsiniz");
+      return;
+    }
+    const MB = 1024 * 1024;
+    if (arr[0].size > 8 * MB) {
+      setHata(`"${arr[0].name}" 8MB sınırını aşıyor`);
+      return;
+    }
+    if (isler.length >= 20) {
+      setHata("En fazla 20 iş eklenebilir");
+      return;
+    }
+
+    setYukleniyor(true);
+    try {
+      const { isler: yeni, reddedilen: red } = await claudeOcr(arr);
+      if (red.length > 0) setReddedilen(red);
+      if (yeni.length === 0 && red.length === 0) {
+        setHata("Belgelerden bilgi çıkarılamadı. Belgenin okunaklı olduğundan emin olup tekrar deneyiniz.");
+      } else if (yeni.length > 0) {
+        setIsler([...isler, ...yeni]);
+      }
+    } catch (e: any) {
+      setHata(e?.message ? `Okuma hatası: ${e.message}` : "Belge okunamadı. Tekrar deneyiniz.");
+    } finally {
+      setYukleniyor(false);
+    }
+  };
+
+  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files;
+    if (!f || f.length === 0) return;
+    if (f.length > 1) {
+      setHata("Her seferinde yalnızca bir belge yükleyebilirsiniz. Lütfen tek bir dosya sürükleyiniz.");
+      return;
+    }
+    dosyaYukle(f);
+  };
+
+  const updIs = (id: string, patch: Partial<Is>) =>
+    setIsler(isler.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+
+  const silIs = (id: string) => setIsler(isler.filter((i) => i.id !== id));
+
+  const muteahhitler = Array.from(new Set(isler.map((i) => i.muteahhit)));
+  const tekMuteahhit = muteahhitler.length === 1 ? muteahhitler[0] : null;
+
+  const eksikAlanlar = isler.some(
+    (i) =>
+      (i.isTuru === "taahhut" && (!i.sozlesmeBedeli || !i.gerceklemeOrani)) ||
+      (i.isTuru === "kamu" && (!i.sozlesmeBedeli || !i.ihaleIlanTarihi || !i.gerceklemeOrani)),
+  );
+
+  const ileriDisabled = isler.length === 0 || !teyit || eksikAlanlar;
+
+  return (
+    <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6">
+      <h2 className="text-lg font-medium text-[#0B1D3A] mb-1">İskan belgelerinizi yükleyiniz</h2>
+      <p className="text-sm text-[#5A6478] mb-4 leading-relaxed">
+        Yapı kullanma izin belgelerinizi (iskan) yükleyiniz. Her bir belgenin yalnızca{" "}
+        <strong className="font-medium text-[#0B1D3A]">yalnızca ön sayfasını</strong> yükleyiniz (her belge tek sayfa). Çoklu sayfalı PDF'ler kabul edilmez. Telefon fotoğrafı (JPG/PNG) en kolay yoldur
+        yeterlidir.
+      </p>
+
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        className={`block border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          dragOver ? "border-[#047857] bg-[#E1F5EE]" : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+        }`}
+      >
+        <CloudUpload className="w-8 h-8 mx-auto text-[#5A6478]" />
+        <p className="mt-2.5 text-sm font-medium text-[#0B1D3A]">Belgenizi buraya sürükleyiniz</p>
+        <p className="mt-1 text-xs text-[#5A6478]">veya bilgisayarınızdan seçiniz · her seferinde tek belge</p>
+        <div className="mt-3 inline-flex gap-1.5">
+          {["PDF", "JPG", "PNG"].map((t) => (
+            <span key={t} className="px-2.5 py-0.5 bg-white border border-[#E8E4DC] rounded-full text-[11px] text-[#5A6478]">
+              {t}
+            </span>
+          ))}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          className="hidden"
+          onChange={(e) => e.target.files && dosyaYukle(e.target.files)}
+        />
+      </label>
+
+      <div className="mt-3 flex items-start gap-2.5 p-3 bg-amber-50 rounded-lg">
+        <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0" />
+        <div className="text-xs text-amber-900 leading-relaxed">
+          <p className="font-medium mb-0.5">Belgelerin okunaklı olması önem arz etmektedir</p>
+          <p>
+            Taranmış belgelerin net çözünürlükte olması; fotoğraflarda ise yazıların eğilmeden, gölgesiz ve tüm
+            bilgilerin kadrajda olacak şekilde çekilmesi gerekmektedir.
+          </p>
+        </div>
+      </div>
+
+      {yukleniyor && (
+        <p className="mt-3 text-xs text-[#5A6478] text-center">Belgeler okunuyor… (10-30 saniye sürebilir)</p>
+      )}
+
+      {hata && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-red-700 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-red-900 leading-relaxed">{hata}</p>
+        </div>
+      )}
+
+      {reddedilen.length > 0 && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-2.5 mb-2">
+            <FileX className="w-4 h-4 text-red-700 mt-0.5 flex-shrink-0" />
+            <p className="text-xs font-medium text-red-900">
+              {reddedilen.length} belge kabul edilmedi
+            </p>
+          </div>
+          <ul className="space-y-1 pl-6">
+            {reddedilen.map((r, i) => (
+              <li key={i} className="text-xs text-red-900 leading-relaxed">
+                <span className="font-medium">{r.ad}</span> — {r.sebep}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {false && (
+        <p className="mt-3 text-xs text-[#5A6478] text-center">_</p>
+      )}
+
+      {isler.length > 0 && (
+        <div className="mt-6 pt-5 border-t border-[#E8E4DC]">
+          <h3 className="text-sm font-medium text-[#0B1D3A] mb-1.5">Çıkarılan bilgileri teyit ediniz</h3>
+          <p className="text-xs text-[#5A6478] mb-3 leading-relaxed">
+            Hesaplama aşağıdaki verilere göre yapılacağından, doğruluk kontrolünün tarafınızca yapılması ve gerekli
+            düzeltmelerin uygulanması önem arz etmektedir. İş türü varsayılan olarak{" "}
+            <strong className="font-medium">kat karşılığı</strong> seçilmiştir.
+          </p>
+
+          {tekMuteahhit && (
+            <div className="flex items-center gap-3 p-2.5 px-3.5 bg-gray-50 rounded-lg mb-3">
+              <div className="w-9 h-9 rounded-full bg-[#047857] text-white flex items-center justify-center font-medium text-sm flex-shrink-0">
+                {muteahhitInitials(tekMuteahhit)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-[#5A6478] tracking-wide">MÜTEAHHİT</p>
+                <p className="text-sm font-medium text-[#0B1D3A] truncate">{tekMuteahhit}</p>
+              </div>
+              <span className="text-[11px] text-[#5A6478] flex-shrink-0">
+                {isler.length} işin tamamı bu firmaya aittir
+              </span>
+            </div>
+          )}
+
+          {!tekMuteahhit && isler.length > 0 && (
+            <div className="flex items-start gap-2.5 p-3 bg-amber-50 rounded-lg mb-3">
+              <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-amber-900">
+                <p className="font-medium">Birden fazla müteahhit tespit edildi</p>
+                <p>Her satırda müteahhit bilgisi ayrıca gösterilmektedir.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-x-auto -mx-1.5">
+            <table className="w-full text-xs border-collapse" style={{ minWidth: tekMuteahhit ? 660 : 820 }}>
+              <thead>
+                <tr className="bg-gray-50 text-[#5A6478]">
+                  <th className="text-left px-2 py-2 font-medium">İş adı</th>
+                  <th className="text-left px-2 py-2 font-medium w-[95px]">Sözleşme</th>
+                  <th className="text-left px-2 py-2 font-medium w-[95px]">İskan</th>
+                  <th className="text-right px-2 py-2 font-medium w-[65px]">m²</th>
+                  <th className="text-left px-2 py-2 font-medium w-[65px]">Sınıf</th>
+                  <th className="text-left px-2 py-2 font-medium w-[70px]">Tip</th>
+                  <th className="text-left px-2 py-2 font-medium w-[140px]">İş türü</th>
+                  {!tekMuteahhit && <th className="text-left px-2 py-2 font-medium">Müteahhit</th>}
+                  <th className="w-[36px]" />
+                </tr>
+              </thead>
+              <tbody>
+                {isler.map((is) => {
+                  const ekBilgi = is.isTuru !== "kat-karsiligi";
+                  const rowBg = ekBilgi ? "bg-[#FEFCF7]" : "";
+                  const dusukUyari = (alan: string) => is.guvenDusukAlanlar?.includes(alan);
+                  return (
+                    <Frag key={is.id}>
+                      <tr className={`border-t border-[#E8E4DC] ${rowBg}`}>
+                        <td className="px-2 py-2.5">
+                          <EditCell value={is.isAdi} onChange={(v) => updIs(is.id, { isAdi: v })} />
+                        </td>
+                        <td className={`px-2 py-2.5 ${dusukUyari("sozlesmeTarihi") ? "bg-amber-50 text-amber-900 rounded" : ""}`}>
+                          <EditCell value={is.sozlesmeTarihi} onChange={(v) => updIs(is.id, { sozlesmeTarihi: v })} />
+                        </td>
+                        <td className="px-2 py-2.5">
+                          <EditCell value={is.iskanTarihi} onChange={(v) => updIs(is.id, { iskanTarihi: v })} />
+                        </td>
+                        <td className="px-2 py-2.5 text-right">
+                          <EditCell
+                            value={String(is.alanM2)}
+                            onChange={(v) => updIs(is.id, { alanM2: parseFloat(v) || 0 })}
+                            className="text-right"
+                          />
+                        </td>
+                        <td className="px-2 py-2.5 font-medium">
+                          <EditCell value={is.sinif} onChange={(v) => updIs(is.id, { sinif: v })} className="font-medium" />
+                        </td>
+                        <td className="px-2 py-2.5">
+                          <select
+                            value={is.yapiTipi}
+                            onChange={(e) => updIs(is.id, { yapiTipi: e.target.value as any })}
+                            className="bg-transparent text-xs outline-none cursor-pointer"
+                          >
+                            <option value="konut">Konut</option>
+                            <option value="ticari">Ticari</option>
+                            <option value="sanayi">Sanayi</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-2.5">
+                          <IsTuruSelect
+                            value={is.isTuru}
+                            onChange={(v) => updIs(is.id, { isTuru: v })}
+                          />
+                        </td>
+                        {!tekMuteahhit && (
+                          <td className="px-2 py-2.5 text-[#5A6478]">
+                            <EditCell value={is.muteahhit} onChange={(v) => updIs(is.id, { muteahhit: v })} />
+                          </td>
+                        )}
+                        <td className="px-2 py-2.5 text-center">
+                          <button
+                            onClick={() => silIs(is.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            title="Sil"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                      {ekBilgi && (
+                        <tr className={rowBg}>
+                          <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-3 pt-1">
+                            <EkBilgiForm is={is} onChange={(p) => updIs(is.id, p)} />
+                          </td>
+                        </tr>
+                      )}
+                    </Frag>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="mt-2.5 text-[11px] text-[#5A6478] px-1">
+            İş türünün <strong className="font-medium">taahhüt</strong> veya{" "}
+            <strong className="font-medium">kamu ihalesi</strong> olarak güncellenmesi durumunda, ilgili satırlarda ek
+            bilgi alanları açılır.
+          </p>
+
+          <div className="flex items-center justify-between mt-4">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3.5 py-2 text-sm border border-[#E8E4DC] rounded-lg hover:bg-gray-50 flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" /> Başka belge ekle
+            </button>
+            <label className="flex items-center gap-2 text-sm text-[#0B1D3A] cursor-pointer">
+              <input type="checkbox" checked={teyit} onChange={(e) => setTeyit(e.target.checked)} />
+              <span>Bilgilerin doğruluğunu teyit ettim</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end mt-6">
+        <button
+          onClick={onIleri}
+          disabled={ileriDisabled}
+          className="px-5 py-2.5 bg-[#047857] hover:bg-[#065F46] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg"
+        >
+          Devam et →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Frag({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+function EditCell({
+  value,
+  onChange,
+  className = "",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+}) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`bg-transparent outline-none w-full focus:bg-white focus:px-1 focus:border focus:border-[#047857] rounded ${className}`}
+    />
+  );
+}
+
+function IsTuruSelect({ value, onChange }: { value: IsTuru; onChange: (v: IsTuru) => void }) {
+  const renkli = value !== "kat-karsiligi";
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as IsTuru)}
+        className={`appearance-none pl-2.5 pr-6 py-1 rounded-full text-[11px] outline-none cursor-pointer ${
+          renkli ? "bg-amber-100 text-amber-900" : "bg-gray-100 text-[#0B1D3A]"
+        }`}
+      >
+        <option value="kat-karsiligi">Kat karşılığı</option>
+        <option value="taahhut">Taahhüt</option>
+        <option value="kamu">Kamu ihalesi</option>
+      </select>
+      <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+    </div>
+  );
+}
+
+function EkBilgiForm({ is, onChange }: { is: Is; onChange: (p: Partial<Is>) => void }) {
+  return (
+    <div className="flex gap-3 items-end p-2.5 px-3 bg-white border border-amber-200 rounded-lg">
+      <CornerDownRight className="w-3.5 h-3.5 text-amber-700 mb-2 flex-shrink-0" />
+      <div className="flex-1">
+        <label className="block text-[11px] text-[#5A6478] mb-1">
+          Sözleşme bedeli (₺) <span className="text-red-600">*</span>
+        </label>
+        <input
+          type="text"
+          value={is.sozlesmeBedeli?.toLocaleString("tr-TR") ?? ""}
+          onChange={(e) =>
+            onChange({ sozlesmeBedeli: parseFloat(e.target.value.replace(/[^\d]/g, "")) || undefined })
+          }
+          placeholder="örn. 8.500.000"
+          className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+        />
+      </div>
+      {is.isTuru === "kamu" && (
+        <div className="flex-1">
+          <label className="block text-[11px] text-[#5A6478] mb-1">
+            İhale ilan tarihi <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="text"
+            value={is.ihaleIlanTarihi ?? ""}
+            onChange={(e) => onChange({ ihaleIlanTarihi: e.target.value })}
+            placeholder="gg.aa.yyyy"
+            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+          />
+        </div>
+      )}
+      <div className="flex-1">
+        <label className="block text-[11px] text-[#5A6478] mb-1">
+          İşin gerçekleşme oranı (%) <span className="text-red-600">*</span>
+        </label>
+        <input
+          type="number"
+          value={is.gerceklemeOrani ?? ""}
+          onChange={(e) => onChange({ gerceklemeOrani: parseFloat(e.target.value) || undefined })}
+          placeholder="100"
+          min={0}
+          max={100}
+          className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+        />
+      </div>
+    </div>
+  );
+}

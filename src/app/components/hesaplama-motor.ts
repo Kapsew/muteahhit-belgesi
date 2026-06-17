@@ -479,21 +479,22 @@ export function tamHesapla(
     iskanDate: g.iskanTarihi ? new Date(g.iskanTarihi) : null,
   }));
 
-  // Yöntem 1: Son 5 yıl toplamı
-  const son5  = isler.filter(x => x.iskanDate && x.iskanDate >= be5);
-  const eski  = isler.filter(x => x.iskanDate && x.iskanDate < be5 && x.iskanDate >= be15);
-  const toplamBrut = son5.reduce((s, x) => s + x.sonuc.guncelTutar, 0);
-  const enBuyuk5   = son5.length > 0 ? Math.max(...son5.map(x => x.sonuc.guncelTutar)) : 0;
-  const ucKat      = enBuyuk5 * 3;
-  const kilidiAcildi = eski.length > 0;
-  const toplamNet  = Math.min(toplamBrut, ucKat);
-
-  // Yöntem 2: Son 15 yılda en büyük × 2
+  // Yöntem 2: Son 15 yıldaki en büyük iş (Bakanlık D31)
+  // — 3× tavan ve 2× taban hesabında bu kullanılır
   const son15 = isler.filter(x => x.iskanDate && x.iskanDate >= be15);
   const enBuyuk15 = son15.length > 0
     ? son15.reduce((m, x) => x.sonuc.guncelTutar > m.sonuc.guncelTutar ? x : m, son15[0])
     : null;
-  const y2Toplam = enBuyuk15 ? enBuyuk15.sonuc.guncelTutar * 2 : 0;
+  const enBuyuk15Tutar = enBuyuk15?.sonuc.guncelTutar || 0;
+  const y2Toplam = enBuyuk15Tutar * 2;
+
+  // Yöntem 1: Son 5 yıl toplamı (3× tavan = son 15 yıldaki en büyük × 3 — Bakanlık D32)
+  const son5  = isler.filter(x => x.iskanDate && x.iskanDate >= be5);
+  const eski  = isler.filter(x => x.iskanDate && x.iskanDate < be5 && x.iskanDate >= be15);
+  const toplamBrut = son5.reduce((s, x) => s + x.sonuc.guncelTutar, 0);
+  const ucKat      = enBuyuk15Tutar * 3;
+  const kilidiAcildi = eski.length > 0;
+  const toplamNet  = Math.min(toplamBrut, ucKat);
 
   // Yöntem 3: Diploma
   const dipSonuc = mezuniyetTarihi ? diplomaGrubu(mezuniyetTarihi) : null;
@@ -511,7 +512,7 @@ export function tamHesapla(
       son5YilIsler: son5,
       eskiIsler: eski,
       toplamBrut,
-      enBuyukIs: enBuyuk5,
+      enBuyukIs: enBuyuk15Tutar,
       ucKatSiniri: ucKat,
       kilidiAcildi,
       toplamNet,

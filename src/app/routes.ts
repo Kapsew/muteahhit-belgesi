@@ -6,6 +6,7 @@ import { DashboardPage } from "./components/dashboard-page";
 import { BlogPage } from "./components/blog-page";
 import { BlogDetailPage } from "./components/blog-detail-page";
 import { AdminPage } from "./components/admin-page";
+import { HizliHesapPage } from "./components/hizli-hesap/HizliHesapPage";
 
 const routes: RouteObject[] = [
   {
@@ -14,6 +15,7 @@ const routes: RouteObject[] = [
     children: [
       { index: true,          Component: LandingPage    },
       { path: "wizard",       Component: WizardPage     },
+      { path: "hizli-hesap",  Component: HizliHesapPage },
       { path: "dashboard",    Component: DashboardPage  },
       { path: "blog",         Component: BlogPage       },
       { path: "blog/:slug",   Component: BlogDetailPage },
