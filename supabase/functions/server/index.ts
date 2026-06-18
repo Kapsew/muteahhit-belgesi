@@ -1,0 +1,504 @@
+import { Hono } from "npm:hono";
+import { cors } from "npm:hono/cors";
+import { logger } from "npm:hono/logger";
+import * as kv from "./kv_store.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
+
+const app = new Hono();
+app.use("*", logger(console.log));
+app.use(
+  "/*",
+  cors({
+    origin: "*",
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    exposeHeaders: ["Content-Length"],
+    maxAge: 600,
+  })
+);
+
+const PREFIX = "/make-server-e2702d20";
+
+function adminClient() {
+  return createClient(
+    Deno.env.get("SUPABASE_URL"),
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+  );
+}
+
+async function getUser(c: any): Promise<{ id: string } | null> {
+  const token = c.req.header("Authorization")?.split(" ")[1];
+  if (!token) return null;
+  const sb = adminClient();
+  const { data, error } = await sb.auth.getUser(token);
+  if (error || !data?.user?.id) return null;
+  return { id: data.user.id };
+}
+
+/* ── Storage Init ── */
+const BUCKET_NAME = "make-e2702d20-docs";
+let bucketReady = false;
+async function ensureBucket() {
+  if (bucketReady) return;
+  const sb = adminClient();
+  const { data: buckets } = await sb.storage.listBuckets();
+  const exists = buckets?.some((b: any) => b.name === BUCKET_NAME);
+  if (!exists) {
+    await sb.storage.createBucket(BUCKET_NAME, { public: false });
+  }
+  bucketReady = true;
+}
+
+/* ── Health ── */
+app.get(`${PREFIX}/health`, (c) => c.json({ status: "ok" }));
+
+/* ── Signup ── */
+app.post(`${PREFIX}/signup`, async (c) => {
+  try {
+    const { email, password, name } = await c.req.json();
+    if (!email || !password) return c.json({ error: "Email ve şifre gerekli" }, 400);
+    const sb = adminClient();
+    const { data, error } = await sb.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: { name: name || "" },
+      email_confirm: true,
+    });
+    if (error) {
+      console.log("Signup error:", error.message);
+      return c.json({ error: error.message }, 400);
+    }
+    return c.json({ userId: data.user.id });
+  } catch (e: any) {
+    console.log("Signup exception:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+/* ── Company CRUD ── */
+// List user companies
+app.get(`${PREFIX}/companies`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companies = (await kv.getByPrefix(`company:${user.id}:`)) || [];
+    return c.json({ companies });
+  } catch (e: any) {
+    console.log("Error listing companies:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Create/update company
+app.post(`${PREFIX}/companies`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const body = await c.req.json();
+    const companyId = body.id || crypto.randomUUID();
+    const companyData = {
+      ...body,
+      id: companyId,
+      userId: user.id,
+      updatedAt: new Date().toISOString(),
+      createdAt: body.createdAt || new Date().toISOString(),
+    };
+    await kv.set(`company:${user.id}:${companyId}`, companyData);
+    return c.json({ company: companyData });
+  } catch (e: any) {
+    console.log("Error saving company:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Get single company
+app.get(`${PREFIX}/companies/:id`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companyId = c.req.param("id");
+    const data = await kv.get(`company:${user.id}:${companyId}`);
+    if (!data) return c.json({ error: "Company not found" }, 404);
+    return c.json({ company: data });
+  } catch (e: any) {
+    console.log("Error getting company:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Delete company
+app.delete(`${PREFIX}/companies/:id`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companyId = c.req.param("id");
+    await kv.del(`company:${user.id}:${companyId}`);
+    // Also delete associated process data
+    await kv.del(`process:${user.id}:${companyId}`);
+    return c.json({ ok: true });
+  } catch (e: any) {
+    console.log("Error deleting company:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+/* ── Process / Status Tracking ── */
+app.get(`${PREFIX}/process/:companyId`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companyId = c.req.param("companyId");
+    const data = await kv.get(`process:${user.id}:${companyId}`);
+    return c.json({ process: data || null });
+  } catch (e: any) {
+    console.log("Error getting process:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.post(`${PREFIX}/process/:companyId`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companyId = c.req.param("companyId");
+    const body = await c.req.json();
+    const processData = {
+      ...body,
+      companyId,
+      userId: user.id,
+      updatedAt: new Date().toISOString(),
+    };
+    await kv.set(`process:${user.id}:${companyId}`, processData);
+    return c.json({ process: processData });
+  } catch (e: any) {
+    console.log("Error saving process:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+/* ── Document Upload ── */
+app.post(`${PREFIX}/documents/upload`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    await ensureBucket();
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File;
+    const companyId = formData.get("companyId") as string;
+    const docType = formData.get("docType") as string;
+    if (!file || !companyId || !docType) return c.json({ error: "file, companyId, docType gerekli" }, 400);
+
+    const sb = adminClient();
+    const path = `${user.id}/${companyId}/${docType}_${Date.now()}_${file.name}`;
+    const { error: uploadError } = await sb.storage.from(BUCKET_NAME).upload(path, file, { upsert: true });
+    if (uploadError) {
+      console.log("Upload error:", uploadError.message);
+      return c.json({ error: uploadError.message }, 500);
+    }
+
+    // Save doc metadata
+    const docMeta = {
+      path,
+      docType,
+      fileName: file.name,
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+    };
+    const docsKey = `docs:${user.id}:${companyId}`;
+    const existing = (await kv.get(docsKey)) || [];
+    existing.push(docMeta);
+    await kv.set(docsKey, existing);
+
+    return c.json({ document: docMeta });
+  } catch (e: any) {
+    console.log("Upload exception:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// List documents for a company
+app.get(`${PREFIX}/documents/:companyId`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companyId = c.req.param("companyId");
+    const docs = (await kv.get(`docs:${user.id}:${companyId}`)) || [];
+    return c.json({ documents: docs });
+  } catch (e: any) {
+    console.log("Error listing docs:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Get signed URL for a document
+app.post(`${PREFIX}/documents/signed-url`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    await ensureBucket();
+    const { path } = await c.req.json();
+    const sb = adminClient();
+    const { data, error } = await sb.storage.from(BUCKET_NAME).createSignedUrl(path, 3600);
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ url: data.signedUrl });
+  } catch (e: any) {
+    console.log("Signed URL error:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Delete a document
+app.post(`${PREFIX}/documents/delete`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    await ensureBucket();
+    const { path, companyId } = await c.req.json();
+    const sb = adminClient();
+    await sb.storage.from(BUCKET_NAME).remove([path]);
+    // Remove from metadata
+    const docsKey = `docs:${user.id}:${companyId}`;
+    const existing = (await kv.get(docsKey)) || [];
+    const updated = existing.filter((d: any) => d.path !== path);
+    await kv.set(docsKey, updated);
+    return c.json({ ok: true });
+  } catch (e: any) {
+    console.log("Delete doc error:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+/* ── Reports (save wizard result as report) ── */
+app.post(`${PREFIX}/reports`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const body = await c.req.json();
+    const reportId = body.id || crypto.randomUUID();
+    const reportData = { ...body, id: reportId, userId: user.id, createdAt: new Date().toISOString() };
+    await kv.set(`report:${user.id}:${body.companyId}:${reportId}`, reportData);
+    return c.json({ report: reportData });
+  } catch (e: any) {
+    console.log("Error saving report:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.get(`${PREFIX}/reports/:companyId`, async (c) => {
+  const user = await getUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  try {
+    const companyId = c.req.param("companyId");
+    const reports = (await kv.getByPrefix(`report:${user.id}:${companyId}:`)) || [];
+    return c.json({ reports });
+  } catch (e: any) {
+    console.log("Error listing reports:", e.message);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+/* ── Claude OCR: iskan belgesinden madde-bazlı veri çıkarma ── */
+// Anonim erişim — hızlı-hesap akışında kullanıcı girişi yok.
+// Body: { dosyalar: [{ad, mimeType, base64}, ...] }
+// Dönüş: { isler: [...], reddedilen: [{ad, sebep}], hata?: string }
+//
+// Korumalar:
+//   - Dosya başı 8MB, tek istekte max 20 belge, toplam 50MB
+//   - PDF max 5 sayfa (5+ ise reddet — alakasız belge ihtimali yüksek)
+//   - IP başına dakikada 3, saatte 20 istek (KV store)
+//   - Belge tipi doğrulaması: Claude "iskan_belgesi_mi=false" derse reddet
+
+const MB = 1024 * 1024;
+const DOSYA_LIMIT = 8 * MB;
+const TOPLAM_LIMIT = 50 * MB;
+const MAX_BELGE = 1;
+const MAX_SAYFA = 1;
+
+async function rateLimitOk(ip: string): Promise<{ ok: boolean; sebep?: string }> {
+  const now = Math.floor(Date.now() / 1000);
+  const dakAnahtar = `rl:ocr:dak:${ip}:${Math.floor(now / 60)}`;
+  const saatAnahtar = `rl:ocr:saat:${ip}:${Math.floor(now / 3600)}`;
+  try {
+    const dakSayac = ((await kv.get(dakAnahtar)) as number) || 0;
+    const saatSayac = ((await kv.get(saatAnahtar)) as number) || 0;
+    if (dakSayac >= 3) return { ok: false, sebep: "Lütfen biraz bekleyiniz (dakikada en fazla 3 istek)" };
+    if (saatSayac >= 20) return { ok: false, sebep: "Saatlik istek limiti aşıldı, lütfen sonra tekrar deneyiniz" };
+    await kv.set(dakAnahtar, dakSayac + 1);
+    await kv.set(saatAnahtar, saatSayac + 1);
+    return { ok: true };
+  } catch {
+    return { ok: true }; // KV hatası olursa engel olmasın
+  }
+}
+
+// PDF sayfa sayısını base64 içeriğinden tahmin et — pdf-lib ile kesin sayım
+async function pdfSayfaSayisi(base64: string): Promise<number> {
+  try {
+    const { PDFDocument } = await import("npm:pdf-lib@1.17.1");
+    const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bin, { ignoreEncryption: true });
+    return doc.getPageCount();
+  } catch (e: any) {
+    console.log("pdf sayfa sayımı hata:", e.message);
+    return 0;
+  }
+}
+
+app.post(`${PREFIX}/ocr-iskan`, async (c) => {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return c.json({ error: "ANTHROPIC_API_KEY tanımlı değil" }, 500);
+
+  // IP bazlı rate limit
+  const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const rl = await rateLimitOk(ip);
+  if (!rl.ok) return c.json({ error: rl.sebep }, 429);
+
+  let body: any;
+  try { body = await c.req.json(); } catch { return c.json({ error: "Geçersiz JSON" }, 400); }
+  const dosyalar = body?.dosyalar;
+  if (!Array.isArray(dosyalar) || dosyalar.length === 0) {
+    return c.json({ error: "En az bir belge gereklidir" }, 400);
+  }
+  if (dosyalar.length > MAX_BELGE) {
+    return c.json({ error: "Her seferinde yalnızca bir belge yükleyebilirsiniz" }, 400);
+  }
+
+  // Toplam ve dosya başı boyut kontrolü
+  let toplamBoyut = 0;
+  for (const d of dosyalar) {
+    const boyut = ((d.base64 as string)?.length || 0) * 0.75;
+    if (boyut > DOSYA_LIMIT) {
+      return c.json({ error: `"${d.ad}" 8MB sınırını aşıyor` }, 400);
+    }
+    toplamBoyut += boyut;
+  }
+  if (toplamBoyut > TOPLAM_LIMIT) {
+    return c.json({ error: `Toplam dosya boyutu 50MB sınırını aşıyor` }, 400);
+  }
+
+  const SISTEM = `Sen Türkiye'deki iskan (yapı kullanma izin) belgelerinden veri çıkaran bir yardımcısın.
+
+ÖNCE belgenin gerçekten bir iskan belgesinin ön sayfası olup olmadığını kontrol et:
+- "YAPI KULLANMA İZİN BELGESİ" başlığı veya numaralı madde alanları (10, 31, 36, 41, 66, 75, 76) var mı?
+- Eğer arka sayfa (Yapının Teknik Özellikleri tablosu — döşeme/duvar/ısıtma/çatı) ise iskan_belgesi_mi=false döndür.
+- Alakasız belge (fatura, sözleşme, kimlik vs.) ise iskan_belgesi_mi=false döndür.
+- Tüm bu durumlarda diğer alanları boş bırak.
+
+Madde haritası:
+  10. madde → belge onay tarihi = ISKAN TARIHI (gg.aa.yyyy)
+  29. madde → yapı kullanım tipi (konut / ticari / sanayi)
+  31. madde → yapı sahibi adı (arsa sahibi)
+  36. madde → müteahhit firma adı (tam unvan)
+  41. madde → sözleşme tarihi (gg.aa.yyyy)
+  66. madde → toplam inşaat alanı (m², sayı olarak)
+  73. madde → yapı yüksekliği (m, sayı olarak — opsiyonel)
+  75. madde → yapı sınıfı (I / II / III / IV / V — Roma rakamı)
+  76. madde → yapı grubu (A / B / C)
+
+Yapı sınıfı ve grubu birleştirilmiş döner: 75=III, 76=B → "III.B"
+Yapı kullanım tipi belirsizse "konut" varsayılan.
+Bir alan okunamıyorsa null döndür ve "guvenDusukAlanlar" dizisine alan adını ekle.
+Tarihler gg.aa.yyyy formatında. Sayıların Türkçe binlik ayracını (.) temizle.`;
+
+  const aracTanimi = {
+    name: "iskan_verisi_dondur",
+    description: "İskan belgesinden çıkarılan bilgileri yapılandırılmış döndürür",
+    input_schema: {
+      type: "object",
+      properties: {
+        iskan_belgesi_mi: { type: "boolean", description: "Belge gerçekten bir iskan belgesi mi" },
+        is: {
+          type: ["object", "null"],
+          properties: {
+            isAdi: { type: ["string","null"], description: "Yapı sahibi adı (31. madde)" },
+            sozlesmeTarihi: { type: ["string","null"], description: "gg.aa.yyyy" },
+            iskanTarihi: { type: ["string","null"], description: "gg.aa.yyyy" },
+            alanM2: { type: ["number","null"] },
+            sinif: { type: ["string","null"], description: "örn III.B" },
+            yapiTipi: { type: "string", enum: ["konut","ticari","sanayi"] },
+            muteahhit: { type: ["string","null"] },
+            yapiYuksekligi: { type: ["number","null"] },
+            guvenDusukAlanlar: {
+              type: "array",
+              items: { type: "string", enum: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit"] },
+            },
+          },
+          required: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit","guvenDusukAlanlar"],
+        },
+      },
+      required: ["iskan_belgesi_mi"],
+    },
+  };
+
+  const isler: any[] = [];
+  const reddedilen: { ad: string; sebep: string }[] = [];
+
+  for (const d of dosyalar) {
+    const mime = d.mimeType || "";
+    let icerikBlogu: any;
+
+    if (mime === "application/pdf") {
+      // PDF sayfa sayısı kontrolü (max 5 — alakasız belge ihtimali)
+      const sayfa = await pdfSayfaSayisi(d.base64);
+      if (sayfa === 0) {
+        reddedilen.push({ ad: d.ad, sebep: "PDF okunamadı veya bozuk" });
+        continue;
+      }
+      if (sayfa > MAX_SAYFA) {
+        reddedilen.push({ ad: d.ad, sebep: `${sayfa} sayfalık PDF — lütfen iskan belgesinin yalnızca ön sayfasını yükleyiniz` });
+        continue;
+      }
+      icerikBlogu = { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.base64 } };
+    } else if (mime.startsWith("image/")) {
+      icerikBlogu = { type: "image", source: { type: "base64", media_type: mime, data: d.base64 } };
+    } else {
+      reddedilen.push({ ad: d.ad, sebep: "Desteklenmeyen dosya tipi (PDF/JPG/PNG kabul edilir)" });
+      continue;
+    }
+
+    const istek = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: SISTEM,
+      tools: [aracTanimi],
+      tool_choice: { type: "tool", name: "iskan_verisi_dondur" },
+      messages: [{
+        role: "user",
+        content: [
+          icerikBlogu,
+          { type: "text", text: "Bu belgeyi incele ve iskan_verisi_dondur aracını çağır. Önce iskan_belgesi_mi alanını doğru belirle." },
+        ],
+      }],
+    };
+
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify(istek),
+      });
+      if (!r.ok) {
+        const txt = await r.text();
+        console.log("Anthropic API hata:", r.status, txt.slice(0, 300));
+        reddedilen.push({ ad: d.ad, sebep: "Sunucu hatası, lütfen tekrar deneyiniz" });
+        continue;
+      }
+      const yanit = await r.json();
+      const tool = yanit.content?.find((b: any) => b.type === "tool_use");
+      const cikti = tool?.input;
+
+      if (!cikti?.iskan_belgesi_mi || !cikti.is) {
+        reddedilen.push({ ad: d.ad, sebep: "Bu belge bir iskan (yapı kullanma izin) belgesi değil" });
+        continue;
+      }
+      isler.push({ ...cikti.is, _dosyaAdi: d.ad });
+    } catch (e: any) {
+      console.log("OCR çağrı hatası:", e.message);
+      reddedilen.push({ ad: d.ad, sebep: "Belge işlenirken hata oluştu" });
+    }
+  }
+
+  return c.json({ isler, reddedilen });
+});
+
+Deno.serve(app.fetch);

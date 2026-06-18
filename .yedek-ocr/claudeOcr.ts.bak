@@ -74,7 +74,6 @@ export async function claudeOcr(files: File[]): Promise<OcrSonucu> {
     isTuru: "kat-karsiligi" as IsTuru,
     muteahhit: x.muteahhit ?? "—",
     guvenDusukAlanlar: Array.isArray(x.guvenDusukAlanlar) ? x.guvenDusukAlanlar : [],
-    yapiYuksekligiM: typeof x.yapiYuksekligi === "number" ? x.yapiYuksekligi : undefined,
   }));
 
   return { isler, reddedilen: data.reddedilen ?? [] };

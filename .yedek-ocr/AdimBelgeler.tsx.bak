@@ -1,7 +1,7 @@
 import { useState, useRef, type DragEvent } from "react";
 import { CloudUpload, AlertTriangle, CornerDownRight, Plus, ChevronDown, Pencil, FileX, Factory } from "lucide-react";
 import type { Is, IsTuru } from "./types";
-import { claudeOcr, type ReddedilenBelge } from "./claudeOcr";
+import { type ReddedilenBelge } from "./claudeOcr";
 import { mockOcr } from "./mockOcr";
 
 // Sanayi + 02.12.2019 sonrası sözleşme → müteahhit yetki belge grubu sorulur.
@@ -20,8 +20,7 @@ export function sanayiGrupGerekli(is: { yapiTipi?: string; sozlesmeTarihi?: stri
 }
 const SANAYI_GRUPLARI = ["A","B","B1","C","C1","D","D1","E","E1","F","F1","G","G1","H"];
 
-// OCR: gerçek edge function (mock'a dönmek için: const ocrFn = mockOcr;)
-const ocrFn = claudeOcr;
+const claudeOcr = mockOcr;
 
 const IS_TURU_LABEL: Record<IsTuru, string> = {
   "kat-karsiligi": "Kat karşılığı",
@@ -75,7 +74,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri }: Props) {
 
     setYukleniyor(true);
     try {
-      const { isler: yeni, reddedilen: red } = await ocrFn(arr);
+      const { isler: yeni, reddedilen: red } = await claudeOcr(arr);
       if (red.length > 0) setReddedilen(red);
       if (yeni.length === 0 && red.length === 0) {
         setHata("Belgelerden bilgi çıkarılamadı. Belgenin okunaklı olduğundan emin olup tekrar deneyiniz.");
