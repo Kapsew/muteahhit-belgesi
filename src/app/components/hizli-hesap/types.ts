@@ -14,7 +14,10 @@ export interface Is {
   guvenDusukAlanlar?: string[];
   sozlesmeBedeli?: number;
   ihaleIlanTarihi?: string;
+  geciciKabulTarihi?: string;   // taahhüt/kamu: son 5/15 yıl filtresinin baz tarihi
   gerceklemeOrani?: number;
+  sanayiGrup?: string;          // sanayi + 02.12.2019 sonrası: müteahhit yetki belge grubu
+  yapiYuksekligiM?: number;     // OCR'dan gelirse: güncel sınıf tespiti için
 }
 
 export interface OturumDurumu {

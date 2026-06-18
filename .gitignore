@@ -8,3 +8,10 @@ dist
 **/.DS_Store
 .yedek-linkler/
 .yedek-hizli-hesap/
+.yedek-linkler/
+.yedek-hizli-hesap/
+.yedek-form/
+.yedek-motor/
+.yedek-sanayi/
+.yedek-parsel/
+.silinen-yedek/

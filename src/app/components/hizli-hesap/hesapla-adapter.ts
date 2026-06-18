@@ -40,6 +40,14 @@ export function islerToGirdi(isler: Is[]): TamHesaplaGirdisi[] {
     isDeneyimiTipi: isTuruToDeneyim(is.isTuru),
     taahhutBedeli: is.sozlesmeBedeli,
     yapiTipi: is.yapiTipi,
+    // gerçekleşme oranı 0..100 (%) gelir → 0..1'e çevir
+    gerceklemeOrani: typeof is.gerceklemeOrani === "number" ? is.gerceklemeOrani / 100 : undefined,
+    // sanayi: ruhsat baz tarihi olarak geçici kabul ya da iskan tarihi
+    ruhsatTarihi: is.geciciKabulTarihi
+      ? trTariheIso(is.geciciKabulTarihi)
+      : (is.iskanTarihi ? trTariheIso(is.iskanTarihi) : undefined),
+    sanayiGrup: is.sanayiGrup,
+    yapiYuksekligiM: typeof is.yapiYuksekligiM === "number" ? is.yapiYuksekligiM : undefined,
   }));
 }
 

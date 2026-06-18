@@ -1,8 +1,25 @@
 import { useState, useRef, type DragEvent } from "react";
-import { CloudUpload, AlertTriangle, CornerDownRight, Plus, ChevronDown, Pencil, FileX } from "lucide-react";
+import { CloudUpload, AlertTriangle, CornerDownRight, Plus, ChevronDown, Pencil, FileX, Factory } from "lucide-react";
 import type { Is, IsTuru } from "./types";
 import { type ReddedilenBelge } from "./claudeOcr";
 import { mockOcr } from "./mockOcr";
+
+// Sanayi + 02.12.2019 sonrası sözleşme → müteahhit yetki belge grubu sorulur.
+// 02.12.2019 öncesinde yetki belge sınıf sistemi olmadığından sorulmaz.
+function trToDate(t?: string): Date | null {
+  if (!t) return null;
+  const m = t.trim().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if (!m) { const d = new Date(t); return isNaN(d.getTime()) ? null : d; }
+  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+}
+const SANAYI_ESIK = new Date(2019, 11, 2); // 02.12.2019
+export function sanayiGrupGerekli(is: { yapiTipi?: string; sozlesmeTarihi?: string }): boolean {
+  if (is.yapiTipi !== "sanayi") return false;
+  const d = trToDate(is.sozlesmeTarihi);
+  return !!d && d >= SANAYI_ESIK;
+}
+const SANAYI_GRUPLARI = ["A","B","B1","C","C1","D","D1","E","E1","F","F1","G","G1","H"];
+
 const claudeOcr = mockOcr;
 
 const IS_TURU_LABEL: Record<IsTuru, string> = {
@@ -93,8 +110,9 @@ export function AdimBelgeler({ isler, setIsler, onIleri }: Props) {
 
   const eksikAlanlar = isler.some(
     (i) =>
-      (i.isTuru === "taahhut" && (!i.sozlesmeBedeli || !i.gerceklemeOrani)) ||
-      (i.isTuru === "kamu" && (!i.sozlesmeBedeli || !i.ihaleIlanTarihi || !i.gerceklemeOrani)),
+      (i.isTuru === "taahhut" && (!i.sozlesmeBedeli || !i.gerceklemeOrani || !i.geciciKabulTarihi)) ||
+      (i.isTuru === "kamu" && (!i.sozlesmeBedeli || !i.ihaleIlanTarihi || !i.gerceklemeOrani || !i.geciciKabulTarihi)) ||
+      (sanayiGrupGerekli(i) && !i.sanayiGrup),
   );
 
   const ileriDisabled = isler.length === 0 || !teyit || eksikAlanlar;
@@ -381,51 +399,90 @@ function IsTuruSelect({ value, onChange }: { value: IsTuru; onChange: (v: IsTuru
 }
 
 function EkBilgiForm({ is, onChange }: { is: Is; onChange: (p: Partial<Is>) => void }) {
+  const sanayiGerek = sanayiGrupGerekli(is);
   return (
-    <div className="flex gap-3 items-end p-2.5 px-3 bg-white border border-amber-200 rounded-lg">
-      <CornerDownRight className="w-3.5 h-3.5 text-amber-700 mb-2 flex-shrink-0" />
-      <div className="flex-1">
-        <label className="block text-[11px] text-[#5A6478] mb-1">
-          Sözleşme bedeli (₺) <span className="text-red-600">*</span>
-        </label>
-        <input
-          type="text"
-          value={is.sozlesmeBedeli?.toLocaleString("tr-TR") ?? ""}
-          onChange={(e) =>
-            onChange({ sozlesmeBedeli: parseFloat(e.target.value.replace(/[^\d]/g, "")) || undefined })
-          }
-          placeholder="örn. 8.500.000"
-          className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
-        />
-      </div>
-      {is.isTuru === "kamu" && (
-        <div className="flex-1">
+    <div className="space-y-2">
+      <div className="flex gap-3 items-end p-2.5 px-3 bg-white border border-amber-200 rounded-lg flex-wrap">
+        <CornerDownRight className="w-3.5 h-3.5 text-amber-700 mb-2 flex-shrink-0" />
+        <div className="flex-1 min-w-[140px]">
           <label className="block text-[11px] text-[#5A6478] mb-1">
-            İhale ilan tarihi <span className="text-red-600">*</span>
+            Sözleşme bedeli (₺, KDV hariç) <span className="text-red-600">*</span>
           </label>
           <input
             type="text"
-            value={is.ihaleIlanTarihi ?? ""}
-            onChange={(e) => onChange({ ihaleIlanTarihi: e.target.value })}
+            value={is.sozlesmeBedeli?.toLocaleString("tr-TR") ?? ""}
+            onChange={(e) =>
+              onChange({ sozlesmeBedeli: parseFloat(e.target.value.replace(/[^\d]/g, "")) || undefined })
+            }
+            placeholder="örn. 8.500.000"
+            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+          />
+        </div>
+        {is.isTuru === "kamu" && (
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-[11px] text-[#5A6478] mb-1">
+              İhale ilan tarihi <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={is.ihaleIlanTarihi ?? ""}
+              onChange={(e) => onChange({ ihaleIlanTarihi: e.target.value })}
+              placeholder="gg.aa.yyyy"
+              className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-[120px]">
+          <label className="block text-[11px] text-[#5A6478] mb-1">
+            Geçici kabul tarihi <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="text"
+            value={is.geciciKabulTarihi ?? ""}
+            onChange={(e) => onChange({ geciciKabulTarihi: e.target.value })}
             placeholder="gg.aa.yyyy"
             className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
           />
         </div>
-      )}
-      <div className="flex-1">
-        <label className="block text-[11px] text-[#5A6478] mb-1">
-          İşin gerçekleşme oranı (%) <span className="text-red-600">*</span>
-        </label>
-        <input
-          type="number"
-          value={is.gerceklemeOrani ?? ""}
-          onChange={(e) => onChange({ gerceklemeOrani: parseFloat(e.target.value) || undefined })}
-          placeholder="100"
-          min={0}
-          max={100}
-          className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
-        />
+        <div className="flex-1 min-w-[100px]">
+          <label className="block text-[11px] text-[#5A6478] mb-1">
+            İşin gerçekleşme oranı (%) <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="number"
+            value={is.gerceklemeOrani ?? ""}
+            onChange={(e) => onChange({ gerceklemeOrani: parseFloat(e.target.value) || undefined })}
+            placeholder="100"
+            min={0}
+            max={100}
+            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+          />
+        </div>
       </div>
+
+      {sanayiGerek && (
+        <div className="flex gap-3 items-start p-2.5 px-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <Factory className="w-4 h-4 text-blue-700 mt-5 flex-shrink-0" />
+          <div className="flex-1">
+            <label className="block text-[11px] text-[#0B1D3A] mb-1 font-medium">
+              Ruhsat tarihindeki müteahhitlik yetki belge grubu <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={is.sanayiGrup ?? ""}
+              onChange={(e) => onChange({ sanayiGrup: e.target.value || undefined })}
+              className="w-full h-8 px-2 text-xs border border-blue-200 rounded outline-none focus:border-blue-500 bg-white"
+            >
+              <option value="">Seçiniz…</option>
+              {SANAYI_GRUPLARI.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-blue-700 mt-1">
+              Sanayi yapısı + 02.12.2019 sonrası sözleşme — müteahhitlik belgenizde o tarihte yazan grup
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
