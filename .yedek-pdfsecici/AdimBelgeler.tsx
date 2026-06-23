@@ -2,8 +2,6 @@ import { useState, useRef, type DragEvent, useEffect } from "react";
 import { CloudUpload, AlertTriangle, CornerDownRight, Plus, ChevronDown, Pencil, FileX, Factory } from "lucide-react";
 import type { Is, IsTuru } from "./types";
 import { claudeOcr, type ReddedilenBelge } from "./claudeOcr";
-import { PdfSayfaSecici } from "./PdfSayfaSecici";
-import * as pdfjsLib from "pdfjs-dist";
 import { mockOcr } from "./mockOcr";
 
 // Sanayi + 02.12.2019 sonrası sözleşme → müteahhit yetki belge grubu sorulur.
@@ -58,7 +56,6 @@ interface MevcutIs {
 export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Props) {
   const [mevcutIsler, setMevcutIsler] = useState<MevcutIs[]>([]);
   const [tekrarUyari, setTekrarUyari] = useState<string | null>(null);
-  const [secimBekleyenPdf, setSecimBekleyenPdf] = useState<File | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [teyit, setTeyit] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -98,11 +95,29 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
       isler.some((i) => ayniMi({ sozlesmeTarihi: i.sozlesmeTarihi, sinif: i.sinif, alanM2: i.alanM2 }));
   };
 
-  // Asıl OCR çağrısı (tek dosya) — hem direkt hem sayfa seçimi sonrası kullanılır
-  const ocrCalistir = async (dosya: File) => {
+  const dosyaYukle = async (files: FileList | File[]) => {
+    const arr = Array.from(files);
+    if (arr.length === 0) return;
+    setHata(null);
+    setReddedilen([]);
+
+    if (arr.length > 1) {
+      setHata("Her seferinde yalnızca bir belge yükleyebilirsiniz");
+      return;
+    }
+    const MB = 1024 * 1024;
+    if (arr[0].size > 8 * MB) {
+      setHata(`"${arr[0].name}" 8MB sınırını aşıyor`);
+      return;
+    }
+    if (isler.length >= 20) {
+      setHata("En fazla 20 iş eklenebilir");
+      return;
+    }
+
     setYukleniyor(true);
     try {
-      const { isler: yeni, reddedilen: red } = await ocrFn([dosya]);
+      const { isler: yeni, reddedilen: red } = await ocrFn(arr);
       if (red.length > 0) setReddedilen(red);
       if (yeni.length === 0 && red.length === 0) {
         setHata("Belgelerden bilgi çıkarılamadı. Belgenin okunaklı olduğundan emin olup tekrar deneyiniz.");
@@ -123,56 +138,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
     } finally {
       setYukleniyor(false);
     }
-  };
-
-  const dosyaYukle = async (files: FileList | File[]) => {
-    const arr = Array.from(files);
-    if (arr.length === 0) return;
-    setHata(null);
-    setReddedilen([]);
-    setSecimBekleyenPdf(null);
-
-    if (arr.length > 1) {
-      setHata("Her seferinde yalnızca bir belge yükleyebilirsiniz");
-      return;
-    }
-    const MB = 1024 * 1024;
-    if (arr[0].size > 8 * MB) {
-      setHata(`"${arr[0].name}" 8MB sınırını aşıyor`);
-      return;
-    }
-    if (isler.length >= 20) {
-      setHata("En fazla 20 iş eklenebilir");
-      return;
-    }
-
-    const dosya = arr[0];
-    const pdfMi = dosya.type === "application/pdf" || /\.pdf$/i.test(dosya.name);
-
-    // PDF ise sayfa sayısını kontrol et
-    if (pdfMi) {
-      try {
-        const buf = await dosya.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-        const sayfaSayisi = pdf.numPages;
-        if (sayfaSayisi > 1) {
-          // Çok sayfalı → kullanıcı iskan sayfasını seçsin
-          setSecimBekleyenPdf(dosya);
-          return;
-        }
-      } catch {
-        // Sayfa sayılamadıysa eski yola düş (tüm PDF'i gönder)
-      }
-    }
-
-    // Tek sayfa PDF veya görsel → direkt OCR
-    await ocrCalistir(dosya);
-  };
-
-  // Sayfa seçici "bu sayfayı kullan" dediğinde
-  const sayfaSecildi = async (sayfaPng: File) => {
-    setSecimBekleyenPdf(null);
-    await ocrCalistir(sayfaPng);
   };
 
   const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
@@ -210,16 +175,9 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
       <p className="text-sm text-[#5A6478] mb-4 leading-relaxed">
         Yapı kullanma izin belgelerinizi (iskan) yükleyiniz. Belgenin{" "}
         <strong className="font-medium text-[#0B1D3A]">ön sayfasının (yapı kullanma izin belgesi) okunaklı olması</strong> yeterlidir.
-        Çok sayfalı PDF yüklerseniz, iskan sayfasını önizlemeden kendiniz seçersiniz. Telefon fotoğrafı (JPG/PNG) da olur — net ve düz çekilmiş olsun.
+        Çok sayfalı PDF'ler kabul edilir; sistem ön sayfayı otomatik bulur. Telefon fotoğrafı (JPG/PNG) da olur — net ve düz çekilmiş olsun.
       </p>
 
-      {secimBekleyenPdf ? (
-        <PdfSayfaSecici
-          dosya={secimBekleyenPdf}
-          onSec={(png) => sayfaSecildi(png)}
-          onIptal={() => setSecimBekleyenPdf(null)}
-        />
-      ) : (
       <label
         onDragOver={(e) => {
           e.preventDefault();
@@ -249,9 +207,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
           onChange={(e) => e.target.files && dosyaYukle(e.target.files)}
         />
       </label>
-      )}
 
-      {!secimBekleyenPdf && (
       <div className="mt-3 flex items-start gap-2.5 p-3 bg-amber-50 rounded-lg">
         <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0" />
         <div className="text-xs text-amber-900 leading-relaxed">
@@ -262,7 +218,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
           </p>
         </div>
       </div>
-      )}
 
       {yukleniyor && (
         <p className="mt-3 text-xs text-[#5A6478] text-center">Belgeler okunuyor… (10-30 saniye sürebilir)</p>
@@ -356,7 +311,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
           )}
 
           <div className="overflow-x-auto -mx-1.5">
-            <table className="w-full text-xs border-collapse" style={{ minWidth: tekMuteahhit ? 760 : 920 }}>
+            <table className="w-full text-xs border-collapse" style={{ minWidth: tekMuteahhit ? 660 : 820 }}>
               <thead>
                 <tr className="bg-gray-50 text-[#5A6478]">
                   <th className="text-left px-2 py-2 font-medium">İş adı</th>
@@ -364,8 +319,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                   <th className="text-left px-2 py-2 font-medium w-[95px]">İskan</th>
                   <th className="text-right px-2 py-2 font-medium w-[65px]">m²</th>
                   <th className="text-left px-2 py-2 font-medium w-[65px]">Sınıf</th>
-                  <th className="text-right px-2 py-2 font-medium w-[55px]">Kat</th>
-                  <th className="text-right px-2 py-2 font-medium w-[75px]">Yük. (m)</th>
                   <th className="text-left px-2 py-2 font-medium w-[70px]">Tip</th>
                   <th className="text-left px-2 py-2 font-medium w-[140px]">İş türü</th>
                   {!tekMuteahhit && <th className="text-left px-2 py-2 font-medium">Müteahhit</th>}
@@ -399,20 +352,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                         <td className="px-2 py-2.5 font-medium">
                           <EditCell value={is.sinif} onChange={(v) => updIs(is.id, { sinif: v })} className="font-medium" />
                         </td>
-                        <td className="px-2 py-2.5 text-right">
-                          <EditCell
-                            value={is.katSayisiToplam != null ? String(is.katSayisiToplam) : "—"}
-                            onChange={(v) => updIs(is.id, { katSayisiToplam: parseFloat(v) || undefined })}
-                            className="text-right"
-                          />
-                        </td>
-                        <td className="px-2 py-2.5 text-right">
-                          <EditCell
-                            value={is.yapiYuksekligiM != null ? String(is.yapiYuksekligiM) : "—"}
-                            onChange={(v) => updIs(is.id, { yapiYuksekligiM: parseFloat(v) || undefined })}
-                            className="text-right"
-                          />
-                        </td>
                         <td className="px-2 py-2.5">
                           <select
                             value={is.yapiTipi}
@@ -445,9 +384,33 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                           </button>
                         </td>
                       </tr>
+                      <tr className={rowBg}>
+                        <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-2 pt-0">
+                          <div className="flex gap-4 items-center text-[11px] text-[#5A6478] flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <span className="text-[#8A93A6]">Toplam kat:</span>
+                              <EditCell
+                                value={is.katSayisiToplam != null ? String(is.katSayisiToplam) : "—"}
+                                onChange={(v) => updIs(is.id, { katSayisiToplam: parseFloat(v) || undefined })}
+                                className="font-medium text-[#0B1D3A] min-w-[24px]"
+                              />
+                            </span>
+                            <span className="text-[#D8DEE9]">·</span>
+                            <span className="flex items-center gap-1">
+                              <span className="text-[#8A93A6]">Yükseklik:</span>
+                              <EditCell
+                                value={is.yapiYuksekligiM != null ? String(is.yapiYuksekligiM) : "—"}
+                                onChange={(v) => updIs(is.id, { yapiYuksekligiM: parseFloat(v) || undefined })}
+                                className="font-medium text-[#0B1D3A] min-w-[36px]"
+                              />
+                              <span className="text-[#8A93A6]">m</span>
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
                       {ekBilgi && (
                         <tr className={rowBg}>
-                          <td colSpan={tekMuteahhit ? 10 : 11} className="px-3.5 pb-3 pt-1">
+                          <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-3 pt-1">
                             <EkBilgiForm is={is} onChange={(p) => updIs(is.id, p)} />
                           </td>
                         </tr>

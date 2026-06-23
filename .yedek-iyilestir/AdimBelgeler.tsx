@@ -356,7 +356,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
           )}
 
           <div className="overflow-x-auto -mx-1.5">
-            <table className="w-full text-xs border-collapse" style={{ minWidth: tekMuteahhit ? 760 : 920 }}>
+            <table className="w-full text-xs border-collapse" style={{ minWidth: tekMuteahhit ? 660 : 820 }}>
               <thead>
                 <tr className="bg-gray-50 text-[#5A6478]">
                   <th className="text-left px-2 py-2 font-medium">İş adı</th>
@@ -364,8 +364,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                   <th className="text-left px-2 py-2 font-medium w-[95px]">İskan</th>
                   <th className="text-right px-2 py-2 font-medium w-[65px]">m²</th>
                   <th className="text-left px-2 py-2 font-medium w-[65px]">Sınıf</th>
-                  <th className="text-right px-2 py-2 font-medium w-[55px]">Kat</th>
-                  <th className="text-right px-2 py-2 font-medium w-[75px]">Yük. (m)</th>
                   <th className="text-left px-2 py-2 font-medium w-[70px]">Tip</th>
                   <th className="text-left px-2 py-2 font-medium w-[140px]">İş türü</th>
                   {!tekMuteahhit && <th className="text-left px-2 py-2 font-medium">Müteahhit</th>}
@@ -399,20 +397,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                         <td className="px-2 py-2.5 font-medium">
                           <EditCell value={is.sinif} onChange={(v) => updIs(is.id, { sinif: v })} className="font-medium" />
                         </td>
-                        <td className="px-2 py-2.5 text-right">
-                          <EditCell
-                            value={is.katSayisiToplam != null ? String(is.katSayisiToplam) : "—"}
-                            onChange={(v) => updIs(is.id, { katSayisiToplam: parseFloat(v) || undefined })}
-                            className="text-right"
-                          />
-                        </td>
-                        <td className="px-2 py-2.5 text-right">
-                          <EditCell
-                            value={is.yapiYuksekligiM != null ? String(is.yapiYuksekligiM) : "—"}
-                            onChange={(v) => updIs(is.id, { yapiYuksekligiM: parseFloat(v) || undefined })}
-                            className="text-right"
-                          />
-                        </td>
                         <td className="px-2 py-2.5">
                           <select
                             value={is.yapiTipi}
@@ -445,9 +429,33 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                           </button>
                         </td>
                       </tr>
+                      <tr className={rowBg}>
+                        <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-2 pt-0">
+                          <div className="flex gap-4 items-center text-[11px] text-[#5A6478] flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <span className="text-[#8A93A6]">Toplam kat:</span>
+                              <EditCell
+                                value={is.katSayisiToplam != null ? String(is.katSayisiToplam) : "—"}
+                                onChange={(v) => updIs(is.id, { katSayisiToplam: parseFloat(v) || undefined })}
+                                className="font-medium text-[#0B1D3A] min-w-[24px]"
+                              />
+                            </span>
+                            <span className="text-[#D8DEE9]">·</span>
+                            <span className="flex items-center gap-1">
+                              <span className="text-[#8A93A6]">Yükseklik:</span>
+                              <EditCell
+                                value={is.yapiYuksekligiM != null ? String(is.yapiYuksekligiM) : "—"}
+                                onChange={(v) => updIs(is.id, { yapiYuksekligiM: parseFloat(v) || undefined })}
+                                className="font-medium text-[#0B1D3A] min-w-[36px]"
+                              />
+                              <span className="text-[#8A93A6]">m</span>
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
                       {ekBilgi && (
                         <tr className={rowBg}>
-                          <td colSpan={tekMuteahhit ? 10 : 11} className="px-3.5 pb-3 pt-1">
+                          <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-3 pt-1">
                             <EkBilgiForm is={is} onChange={(p) => updIs(is.id, p)} />
                           </td>
                         </tr>
