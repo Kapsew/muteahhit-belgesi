@@ -5,7 +5,7 @@ import {
   CreditCard, Tag, Menu, X, LogOut, ChevronRight, Award,
   Eye, EyeOff, Shield, AlertCircle
 } from "lucide-react";
-import { loadFromStorage, saveToStorage, ADMIN_SESSION_KEY } from "./admin-data";
+import { supabase, isAdmin } from "./supabase-client";
 import { AdminDashboard } from "./admin-dashboard";
 import { AdminCompanies } from "./admin-companies";
 import { AdminUsers } from "./admin-users";
@@ -16,8 +16,7 @@ import { AdminBlog } from "./admin-blog";
 import { AdminVeritabani } from "./admin-veritabani";
 import { AdminHesaplama } from "./admin-hesaplama";
 
-const ADMIN_EMAIL    = "admin@muteahhitlikbelgesi.com";
-const ADMIN_PASSWORD = "Admin123!";
+const ADMIN_EMAIL = "admin@muteahhitlikbelgesi.com";
 
 type AdminTab = "dashboard" | "sirketler" | "kullanicilar" | "basvurular" | "hesaplama" | "evraklar" | "faturalar" | "blog" | "veritabani";
 
@@ -50,14 +49,31 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setError(""); setLoading(true);
-    await new Promise(r => setTimeout(r, 500));
-    if (email.trim().toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      saveToStorage(ADMIN_SESSION_KEY, { email, loggedInAt: new Date().toISOString() });
+    try {
+      // 1) Gerçek Supabase girişi
+      const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (signInErr || !data.user) {
+        setError("Hatalı e-posta veya şifre.");
+        setLoading(false);
+        return;
+      }
+      // 2) Bu kullanıcı gerçekten admin mi? (profiles.rol === 'admin')
+      const yetkili = await isAdmin(data.user.id);
+      if (!yetkili) {
+        await supabase.auth.signOut();
+        setError("Bu hesabın admin yetkisi yok.");
+        setLoading(false);
+        return;
+      }
       onLogin();
-    } else {
-      setError("Hatalı e-posta veya şifre.");
+    } catch (err: any) {
+      setError(err?.message || "Giriş sırasında bir hata oluştu.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -133,19 +149,33 @@ function AdminSettings({ onLogout }: { onLogout: () => void }) {
 export function AdminPage() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [oturumKontrol, setOturumKontrol] = useState(true);
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Sayfa yenilenince: gerçek Supabase oturumu var mı + admin mi?
   useEffect(() => {
-    const s = loadFromStorage<{ email: string } | null>(ADMIN_SESSION_KEY, null);
-    if (s?.email === ADMIN_EMAIL) setIsLoggedIn(true);
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (user && (await isAdmin(user.id))) {
+        setIsLoggedIn(true);
+      }
+      setOturumKontrol(false);
+    })();
   }, []);
 
-  const handleLogout = () => { localStorage.removeItem(ADMIN_SESSION_KEY); setIsLoggedIn(false); };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsLoggedIn(false);
+  };
   const handleNavigate = useCallback((tab: string) => { setActiveTab(tab as AdminTab); setSidebarOpen(false); }, []);
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
+  if (oturumKontrol) {
+    return <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center text-sm text-[#5A6478]">Yükleniyor…</div>;
+  }
   if (!isLoggedIn) return <AdminLogin onLogin={() => setIsLoggedIn(true)} />;
 
   const props = { refreshKey, onRefresh: refresh };
