@@ -20,9 +20,6 @@ interface ClaudeIs {
   yapiTipi: "konut" | "ticari" | "sanayi";
   muteahhit: string | null;
   yapiYuksekligi: number | null;
-  katSayisiToplam?: number | null;
-  katSayisiUst?: number | null;
-  katSayisiAlt?: number | null;
   guvenDusukAlanlar: string[];
   _dosyaAdi?: string;
 }
@@ -78,9 +75,6 @@ export async function claudeOcr(files: File[]): Promise<OcrSonucu> {
     muteahhit: x.muteahhit ?? "—",
     guvenDusukAlanlar: Array.isArray(x.guvenDusukAlanlar) ? x.guvenDusukAlanlar : [],
     yapiYuksekligiM: typeof x.yapiYuksekligi === "number" ? x.yapiYuksekligi : undefined,
-    katSayisiToplam: typeof x.katSayisiToplam === "number" ? x.katSayisiToplam : undefined,
-    katSayisiUst: typeof x.katSayisiUst === "number" ? x.katSayisiUst : undefined,
-    katSayisiAlt: typeof x.katSayisiAlt === "number" ? x.katSayisiAlt : undefined,
   }));
 
   return { isler, reddedilen: data.reddedilen ?? [] };

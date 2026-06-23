@@ -48,9 +48,6 @@ export function islerToGirdi(isler: Is[]): TamHesaplaGirdisi[] {
       : (is.iskanTarihi ? trTariheIso(is.iskanTarihi) : undefined),
     sanayiGrup: is.sanayiGrup,
     yapiYuksekligiM: typeof is.yapiYuksekligiM === "number" ? is.yapiYuksekligiM : undefined,
-    katSayisiToplam: is.katSayisiToplam,
-    katSayisiUst: is.katSayisiUst,
-    katSayisiAlt: is.katSayisiAlt,
   }));
 }
 

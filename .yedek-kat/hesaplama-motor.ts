@@ -589,9 +589,6 @@ export interface TamHesaplaGirdisi {
   adaParsel?: string;
   yapiTipi?: string;
   yapiYuksekligiM?: number;
-  katSayisiToplam?: number;
-  katSayisiUst?: number;
-  katSayisiAlt?: number;
   gerceklemeOrani?: number;
   ruhsatTarihi?: string;
   sanayiGrup?: string;

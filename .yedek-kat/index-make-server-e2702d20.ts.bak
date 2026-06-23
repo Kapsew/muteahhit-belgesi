@@ -98,10 +98,7 @@ Madde haritası:
   36. madde → müteahhit firma adı (tam unvan)
   41. madde → sözleşme tarihi (gg.aa.yyyy)
   66. madde → toplam inşaat alanı (m², sayı olarak)
-  67. madde → yol kotu altı kat sayısı (sayı — opsiyonel)
-  68. madde → yol kotu üstü kat sayısı (sayı — opsiyonel)
-  69. madde → toplam kat sayısı (sayı — opsiyonel)
-  73. madde → toplam yapı yüksekliği (m, sayı olarak — opsiyonel)
+  73. madde → yapı yüksekliği (m, sayı olarak — opsiyonel)
   75. madde → yapı sınıfı (I / II / III / IV / V — Roma rakamı)
   76. madde → yapı grubu (A / B / C)
 
@@ -127,10 +124,7 @@ Tarihler gg.aa.yyyy formatında. Sayıların Türkçe binlik ayracını (.) temi
             sinif: { type: ["string","null"], description: "örn III.B" },
             yapiTipi: { type: "string", enum: ["konut","ticari","sanayi"] },
             muteahhit: { type: ["string","null"] },
-            yapiYuksekligi: { type: ["number","null"], description: "toplam yapı yüksekliği m (73. madde)" },
-            katSayisiToplam: { type: ["number","null"], description: "toplam kat sayısı (69. madde)" },
-            katSayisiUst: { type: ["number","null"], description: "yol kotu üstü kat sayısı (68. madde)" },
-            katSayisiAlt: { type: ["number","null"], description: "yol kotu altı kat sayısı (67. madde)" },
+            yapiYuksekligi: { type: ["number","null"] },
             guvenDusukAlanlar: {
               type: "array",
               items: { type: "string", enum: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit"] },

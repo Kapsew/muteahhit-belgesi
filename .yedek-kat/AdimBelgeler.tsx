@@ -309,45 +309,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri }: Props) {
                           </button>
                         </td>
                       </tr>
-                      <tr className={rowBg}>
-                        <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-2 pt-0">
-                          <div className="flex gap-4 items-center text-[11px] text-[#5A6478] flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <span className="text-[#8A93A6]">Toplam kat:</span>
-                              <EditCell
-                                value={is.katSayisiToplam != null ? String(is.katSayisiToplam) : "—"}
-                                onChange={(v) => updIs(is.id, { katSayisiToplam: parseFloat(v) || undefined })}
-                                className="font-medium text-[#0B1D3A] min-w-[24px]"
-                              />
-                            </span>
-                            <span className="text-[#D8DEE9]">·</span>
-                            <span className="flex items-center gap-1">
-                              <span className="text-[#8A93A6]">Üst/alt kat:</span>
-                              <EditCell
-                                value={is.katSayisiUst != null ? String(is.katSayisiUst) : "—"}
-                                onChange={(v) => updIs(is.id, { katSayisiUst: parseFloat(v) || undefined })}
-                                className="font-medium text-[#0B1D3A] min-w-[20px]"
-                              />
-                              <span className="text-[#8A93A6]">/</span>
-                              <EditCell
-                                value={is.katSayisiAlt != null ? String(is.katSayisiAlt) : "—"}
-                                onChange={(v) => updIs(is.id, { katSayisiAlt: parseFloat(v) || undefined })}
-                                className="font-medium text-[#0B1D3A] min-w-[20px]"
-                              />
-                            </span>
-                            <span className="text-[#D8DEE9]">·</span>
-                            <span className="flex items-center gap-1">
-                              <span className="text-[#8A93A6]">Yükseklik:</span>
-                              <EditCell
-                                value={is.yapiYuksekligiM != null ? String(is.yapiYuksekligiM) : "—"}
-                                onChange={(v) => updIs(is.id, { yapiYuksekligiM: parseFloat(v) || undefined })}
-                                className="font-medium text-[#0B1D3A] min-w-[36px]"
-                              />
-                              <span className="text-[#8A93A6]">m</span>
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
                       {ekBilgi && (
                         <tr className={rowBg}>
                           <td colSpan={tekMuteahhit ? 8 : 9} className="px-3.5 pb-3 pt-1">

@@ -156,7 +156,6 @@ function DetayIcerik({ hesap }: { hesap: TamHesaplama }) {
                 <th className="py-2 pr-2">Sözleşme</th>
                 <th className="py-2 pr-2">Sınıf</th>
                 <th className="py-2 pr-2">Alan m²</th>
-                <th className="py-2 pr-2">Kat / Yük.</th>
                 <th className="py-2 pr-2 text-right">Belge Tutarı</th>
                 <th className="py-2 text-right">Güncel Değer</th>
               </tr>
@@ -167,10 +166,6 @@ function DetayIcerik({ hesap }: { hesap: TamHesaplama }) {
                   <td className="py-2 pr-2">{is.sozlesmeTarihi}</td>
                   <td className="py-2 pr-2">{is.ruhsatSinifi}</td>
                   <td className="py-2 pr-2">{is.insaatAlaniM2?.toLocaleString("tr-TR")}</td>
-                  <td className="py-2 pr-2 text-[#5A6478]">
-                    {is.katSayisiToplam != null ? `${is.katSayisiToplam} kat` : "—"}
-                    {is.yapiYuksekligiM != null ? ` · ${is.yapiYuksekligiM} m` : ""}
-                  </td>
                   <td className="py-2 pr-2 text-right">{tl(is.sonuc.belgeTutari)}</td>
                   <td className="py-2 text-right font-medium text-[#0B1D3A]">{tl(is.sonuc.guncelTutar)}</td>
                 </tr>

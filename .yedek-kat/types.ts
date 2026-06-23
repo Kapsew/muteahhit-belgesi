@@ -18,9 +18,6 @@ export interface Is {
   gerceklemeOrani?: number;
   sanayiGrup?: string;          // sanayi + 02.12.2019 sonrası: müteahhit yetki belge grubu
   yapiYuksekligiM?: number;     // OCR'dan gelirse: güncel sınıf tespiti için
-  katSayisiToplam?: number;     // toplam kat sayısı (69. madde)
-  katSayisiUst?: number;        // yol kotu üstü kat sayısı (68. madde)
-  katSayisiAlt?: number;        // yol kotu altı kat sayısı (67. madde)
 }
 
 export interface OturumDurumu {
