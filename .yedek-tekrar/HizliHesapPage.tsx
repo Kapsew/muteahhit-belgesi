@@ -116,7 +116,7 @@ export function HizliHesapPage() {
 
         <Stepper aktif={adim} sonAdimEtiketi={isUpgrade ? "Onay ve ödeme" : undefined} />
 
-        {adim === 0 && <AdimBelgeler isler={isler} setIsler={setIsler} onIleri={() => setAdim(1)} mevcutCompanyId={upgradeId} />}
+        {adim === 0 && <AdimBelgeler isler={isler} setIsler={setIsler} onIleri={() => setAdim(1)} />}
         {adim === 1 && (
           <AdimMali
             dosya={maliBeyanname}

@@ -1,4 +1,4 @@
-import { useState, useRef, type DragEvent, useEffect } from "react";
+import { useState, useRef, type DragEvent } from "react";
 import { CloudUpload, AlertTriangle, CornerDownRight, Plus, ChevronDown, Pencil, FileX, Factory } from "lucide-react";
 import type { Is, IsTuru } from "./types";
 import { claudeOcr, type ReddedilenBelge } from "./claudeOcr";
@@ -43,57 +43,15 @@ interface Props {
   isler: Is[];
   setIsler: (is: Is[]) => void;
   onIleri: () => void;
-  mevcutCompanyId?: string;   // upgrade: daha önce eklenmiş işleri göstermek için
 }
 
-interface MevcutIs {
-  sozlesmeTarihi: string;
-  sinif: string;
-  alanM2: number | null;
-  adaParsel: string;
-}
-
-export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Props) {
-  const [mevcutIsler, setMevcutIsler] = useState<MevcutIs[]>([]);
-  const [tekrarUyari, setTekrarUyari] = useState<string | null>(null);
+export function AdimBelgeler({ isler, setIsler, onIleri }: Props) {
   const [yukleniyor, setYukleniyor] = useState(false);
   const [teyit, setTeyit] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
   const [reddedilen, setReddedilen] = useState<ReddedilenBelge[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Upgrade: daha önce eklenmiş işleri çek
-  useEffect(() => {
-    if (!mevcutCompanyId) return;
-    (async () => {
-      const { supabase } = await import("../supabase-client");
-      const { data } = await supabase
-        .from("experiences")
-        .select("sozlesme_tarihi, yapi_sinifi, insaat_alani_m2, ada_parsel")
-        .eq("company_id", mevcutCompanyId);
-      if (data) {
-        setMevcutIsler(data.map((e: any) => ({
-          sozlesmeTarihi: e.sozlesme_tarihi || "",
-          sinif: e.yapi_sinifi || "",
-          alanM2: e.insaat_alani_m2 ?? null,
-          adaParsel: e.ada_parsel || "",
-        })));
-      }
-    })();
-  }, [mevcutCompanyId]);
-
-  // Yeni iş, mevcut/eklenenlerle birebir aynı mı? (uyarı için, engelleme yok)
-  const tekrarMi = (yeniIs: Is): boolean => {
-    const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-    const ayniMi = (a: { sozlesmeTarihi: string; sinif: string; alanM2: number | null; adaParsel?: string }) =>
-      norm(a.sozlesmeTarihi) === norm(yeniIs.sozlesmeTarihi) &&
-      norm(a.sinif) === norm(yeniIs.sinif) &&
-      Number(a.alanM2 ?? -1) === Number(yeniIs.alanM2 ?? -2);
-    // Hem daha önce kaydedilenler hem bu oturumda eklenenlerle karşılaştır
-    return mevcutIsler.some(ayniMi) ||
-      isler.some((i) => ayniMi({ sozlesmeTarihi: i.sozlesmeTarihi, sinif: i.sinif, alanM2: i.alanM2 }));
-  };
 
   const dosyaYukle = async (files: FileList | File[]) => {
     const arr = Array.from(files);
@@ -122,15 +80,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
       if (yeni.length === 0 && red.length === 0) {
         setHata("Belgelerden bilgi çıkarılamadı. Belgenin okunaklı olduğundan emin olup tekrar deneyiniz.");
       } else if (yeni.length > 0) {
-        const tekrarlar = yeni.filter(tekrarMi);
-        if (tekrarlar.length > 0) {
-          setTekrarUyari(
-            "Bu iş daha önce eklenmiş görünüyor (aynı sözleşme tarihi, sınıf ve alan). " +
-            "Yine de eklendi; tekrar saymak istemiyorsanız aşağıdan silebilirsiniz."
-          );
-        } else {
-          setTekrarUyari(null);
-        }
         setIsler([...isler, ...yeni]);
       }
     } catch (e: any) {
@@ -223,13 +172,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
         <p className="mt-3 text-xs text-[#5A6478] text-center">Belgeler okunuyor… (10-30 saniye sürebilir)</p>
       )}
 
-      {tekrarUyari && (
-        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-amber-900 leading-relaxed">{tekrarUyari}</p>
-        </div>
-      )}
-
       {hata && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-red-700 mt-0.5 flex-shrink-0" />
@@ -255,25 +197,8 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
         </div>
       )}
 
-      {mevcutCompanyId && mevcutIsler.length > 0 && (
-        <div className="mt-4 p-4 bg-[#F0EDE8] rounded-xl">
-          <h3 className="text-sm font-medium text-[#0B1D3A] mb-1">Daha önce eklediğiniz işler</h3>
-          <p className="text-xs text-[#5A6478] mb-3">
-            Bu işler firmanızda zaten kayıtlı. Aynısını tekrar yüklemenize gerek yok.
-          </p>
-          <div className="space-y-2">
-            {mevcutIsler.map((m, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs bg-white rounded-lg px-3 py-2 border border-[#E8E4DC]">
-                <span className="w-5 h-5 rounded-full bg-[#0B1D3A]/5 text-[#0B1D3A] flex items-center justify-center text-[10px] font-medium shrink-0">{i + 1}</span>
-                <span className="text-[#5A6478]">Sözleşme: <span className="text-[#0B1D3A] font-medium">{m.sozlesmeTarihi || "—"}</span></span>
-                <span className="text-[#D8DEE9]">·</span>
-                <span className="text-[#5A6478]">Sınıf: <span className="text-[#0B1D3A] font-medium">{m.sinif || "—"}</span></span>
-                <span className="text-[#D8DEE9]">·</span>
-                <span className="text-[#5A6478]">{m.alanM2 != null ? `${m.alanM2.toLocaleString("tr-TR")} m²` : "—"}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {false && (
+        <p className="mt-3 text-xs text-[#5A6478] text-center">_</p>
       )}
 
       {isler.length > 0 && (

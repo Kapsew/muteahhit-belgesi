@@ -1745,7 +1745,7 @@ function TabBelge({ company, navigate, sonRapor }: { company: Company; navigate:
           <p className="text-sm font-medium text-[#0B1D3A]">Yeni iş deneyimi eklemek ister misiniz?</p>
           <p className="text-xs text-[#5A6478] mt-0.5">Yeni tamamlanan işlerinizi ekleyerek belgenizi yenileyebilirsiniz.</p>
         </div>
-        <button onClick={() => navigate("/hizli-hesap", { state: { isUpgrade: true, companyId: company.id } })}
+        <button onClick={() => navigate("/wizard", { state: { isUpgrade: true, companyId: company.id } })}
           className="flex items-center gap-1.5 text-xs bg-[#C9952B]/10 hover:bg-[#C9952B]/20 text-[#C9952B] border border-[#C9952B]/30 px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
           <Plus className="w-3.5 h-3.5" /> Yeni İş Ekle
         </button>
@@ -1993,9 +1993,9 @@ export function DashboardPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Firma başlık + aksiyon butonları */}
+        {/* Firma başlık + Yeni Analiz */}
         {company && (
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold text-[#0B1D3A]">{company.companyName}</h1>
               <p className="text-sm text-[#5A6478] mt-0.5">
@@ -2003,24 +2003,12 @@ export function DashboardPage() {
                 {company.location === "istanbul" && " · İstanbul"}
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => navigate("/hizli-hesap", { state: { isUpgrade: true, companyId: company.id } })}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] text-sm font-medium rounded-xl transition-colors whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4" /> Yeni İş Ekle
-              </button>
-              <button
-                onClick={() => {
-                  if (window.confirm("Bu işlem mevcut firmanıza iş EKLEMEZ. Ayrı, yeni bir firma başvurusu başlatır. Devam etmek istiyor musunuz?")) {
-                    navigate("/hizli-hesap");
-                  }
-                }}
-                className="flex items-center gap-1.5 px-4 py-2.5 border border-[#E8E4DC] hover:border-[#C9952B] hover:text-[#C9952B] text-[#5A6478] text-sm font-medium rounded-xl transition-colors whitespace-nowrap"
-              >
-                <Building2 className="w-4 h-4" /> Yeni Firma
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/hizli-hesap")}
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] text-sm font-medium rounded-xl transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Yeni Analiz
+            </button>
           </div>
         )}
 

@@ -27,17 +27,9 @@ export async function kayitYap(
   iletisim: Iletisim,
   isler: Is[],
   hesap: TamHesaplama,
-  maliBeyanname: File | null,
-  mevcutCompanyId?: string   // verilirse: yeni firma açmaz, mevcut firmaya iş ekler (upgrade)
+  maliBeyanname: File | null
 ): Promise<KayitSonucu> {
-  const upgrade = !!mevcutCompanyId;
-  // ── 1) Signup (yalnızca yeni başvuruda; upgrade'de kullanıcı zaten giriş yapmış) ──
-  let userId: string;
-  if (upgrade) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
-    userId = user.id;
-  } else {
+  // ── 1) Signup ──
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: iletisim.eposta,
     password: iletisim.sifre,
@@ -45,9 +37,8 @@ export async function kayitYap(
   });
   if (authError) throw new Error(`Kayıt hatası: ${authError.message}`);
 
-  const newUserId = authData.user?.id;
-  if (!newUserId) throw new Error("Kullanıcı oluşturulamadı (oturum açılmadı). Email onayı kapalı mı?");
-  userId = newUserId;
+  const userId = authData.user?.id;
+  if (!userId) throw new Error("Kullanıcı oluşturulamadı (oturum açılmadı). Email onayı kapalı mı?");
 
   // Oturum gerçekten açıldı mı? RLS için şart.
   if (!authData.session) {
@@ -62,35 +53,25 @@ export async function kayitYap(
       );
     }
   }
-  }  // ← signup else bloğu kapanışı
 
-  // ── 2) companies (yeni başvuru: insert | upgrade: mevcut firmayı kullan) ──
-  let companyId: string;
-  if (upgrade) {
-    companyId = mevcutCompanyId!;
-    // Yeni hesaplanan grubu ve durumu güncelle
-    await supabase.from("companies")
-      .update({ hesaplanan_grup: hesap.tercihEdilenGrup, app_status: "pending_payment" })
-      .eq("id", companyId);
-  } else {
-    const { data: company, error: compErr } = await supabase
-      .from("companies")
-      .insert({
-        user_id: userId,
-        user_email: iletisim.eposta,
-        company_name: iletisim.firmaUnvani,
-        tax_id: iletisim.vergiNo,
-        phone: iletisim.telefon,
-        email: iletisim.eposta,
-        hesaplanan_grup: hesap.tercihEdilenGrup,
-        app_status: "pending_payment",
-        partners: [],
-      })
-      .select()
-      .single();
-    if (compErr) throw new Error(`Firma kaydı hatası: ${compErr.message}`);
-    companyId = company.id as string;
-  }
+  // ── 2) companies ──
+  const { data: company, error: compErr } = await supabase
+    .from("companies")
+    .insert({
+      user_id: userId,
+      user_email: iletisim.eposta,
+      company_name: iletisim.firmaUnvani,
+      tax_id: iletisim.vergiNo,
+      phone: iletisim.telefon,
+      email: iletisim.eposta,
+      hesaplanan_grup: hesap.tercihEdilenGrup,
+      app_status: "pending_payment",
+      partners: [],
+    })
+    .select()
+    .single();
+  if (compErr) throw new Error(`Firma kaydı hatası: ${compErr.message}`);
+  const companyId = company.id as string;
 
   // ── 3) experiences ──
   if (isler.length > 0) {

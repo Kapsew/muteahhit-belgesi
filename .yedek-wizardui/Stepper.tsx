@@ -2,11 +2,10 @@ import { Check } from "lucide-react";
 
 const ADIMLAR = ["Belgeler ve teyit", "Mali yeterlilik", "İletişim ve ödeme"];
 
-export function Stepper({ aktif, sonAdimEtiketi }: { aktif: 0 | 1 | 2; sonAdimEtiketi?: string }) {
-  const adimlar = sonAdimEtiketi ? [ADIMLAR[0], ADIMLAR[1], sonAdimEtiketi] : ADIMLAR;
+export function Stepper({ aktif }: { aktif: 0 | 1 | 2 }) {
   return (
     <div className="flex items-center mb-6">
-      {adimlar.map((ad, i) => {
+      {ADIMLAR.map((ad, i) => {
         const done = i < aktif;
         const active = i === aktif;
         return (
@@ -23,7 +22,7 @@ export function Stepper({ aktif, sonAdimEtiketi }: { aktif: 0 | 1 | 2; sonAdimEt
               </span>
               <span className={`text-xs ${active ? "font-medium text-[#0B1D3A]" : "text-[#5A6478]"}`}>{ad}</span>
             </div>
-            {i < adimlar.length - 1 && (
+            {i < ADIMLAR.length - 1 && (
               <div className={`flex-1 h-px mx-3 ${done ? "bg-[#047857]" : "bg-gray-200"}`} />
             )}
           </div>
