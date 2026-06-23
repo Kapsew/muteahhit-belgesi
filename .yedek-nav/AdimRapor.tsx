@@ -7,8 +7,7 @@
 // ====================================================================
 
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { Lock, CheckCircle2, FileText, TrendingUp, AlertCircle, ShieldCheck, Eye, LayoutDashboard, Home, ArrowRight } from "lucide-react";
+import { Lock, CheckCircle2, FileText, TrendingUp, AlertCircle, ShieldCheck, Download, Eye } from "lucide-react";
 import type { TamHesaplama, HesaplananIs } from "../hesaplama-motor";
 import { testOdemeTamamla } from "./kayit";
 
@@ -25,7 +24,6 @@ function tl(n: number): string {
 const FIYAT = "1.499 ₺";
 
 export function AdimRapor({ hesap, companyId, firmaUnvani }: Props) {
-  const navigate = useNavigate();
   const [odendi, setOdendi] = useState(false);
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState<string | null>(null);
@@ -88,22 +86,6 @@ export function AdimRapor({ hesap, companyId, firmaUnvani }: Props) {
               Ödemeniz alındı. Raporunuza panelinizden de erişebilirsiniz. Uzman incelemesi
               sonrası onaylı PDF rapor en geç 2 iş günü içinde iletilecektir.
             </p>
-          </div>
-
-          {/* Yönlendirme — kullanıcı sayfada sıkışmasın */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="flex-1 px-4 py-3 bg-[#0B1D3A] hover:bg-[#122A54] text-white text-sm font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
-            >
-              <LayoutDashboard className="w-4 h-4" /> Panelime Git <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => navigate("/")}
-              className="flex-1 px-4 py-3 border border-[#E8E4DC] hover:bg-gray-50 text-[#0B1D3A] text-sm font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
-            >
-              <Home className="w-4 h-4" /> Ana Sayfa
-            </button>
           </div>
         </>
       ) : (

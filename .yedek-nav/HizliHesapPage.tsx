@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
-import { Award, LayoutDashboard } from "lucide-react";
 import { Stepper } from "./Stepper";
 import { AdimBelgeler } from "./AdimBelgeler";
 import { AdimMali } from "./AdimMali";
@@ -23,7 +21,6 @@ const BOS_ILETISIM: OturumDurumu["iletisim"] = {
 };
 
 export function HizliHesapPage() {
-  const navigate = useNavigate();
   const [adim, setAdim] = useState<0 | 1 | 2>(0);
   const [isler, setIsler] = useState<Is[]>([]);
   const [maliBeyanname, setMaliBeyanname] = useState<File | null>(null);
@@ -49,37 +46,19 @@ export function HizliHesapPage() {
     }
   };
 
-  const UstBar = () => (
-    <div className="border-b border-[#E8E4DC] bg-white">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <button onClick={() => navigate("/")} className="flex items-center gap-2 text-[#0B1D3A] hover:opacity-80 transition-opacity">
-          <Award className="w-5 h-5 text-[#C9952B]" />
-          <span className="font-medium text-sm">müteahhitlikbelgesi<span className="text-[#C9952B]">.com</span></span>
-        </button>
-        <button onClick={() => navigate("/dashboard")} className="flex items-center gap-1.5 text-sm text-[#5A6478] hover:text-[#0B1D3A] transition-colors">
-          <LayoutDashboard className="w-4 h-4" /> Panelim
-        </button>
-      </div>
-    </div>
-  );
-
   if (hesap && kayit) {
     return (
-      <div className="min-h-screen">
-        <UstBar />
-        <div className="py-8 px-4">
-          <div className="max-w-3xl mx-auto">
-            <AdimRapor hesap={hesap} companyId={kayit.companyId} firmaUnvani={iletisim.firmaUnvani} />
-          </div>
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <AdimRapor hesap={hesap} companyId={kayit.companyId} firmaUnvani={iletisim.firmaUnvani} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <UstBar />
-      <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
+      <div className="max-w-3xl mx-auto">
         <header className="mb-6">
           <h1 className="text-2xl font-medium text-[#0B1D3A]">Müteahhitlik yeterlilik analizi</h1>
           <p className="text-sm text-[#5A6478] mt-1">
