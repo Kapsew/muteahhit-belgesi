@@ -1,7 +1,7 @@
 import { Hono } from "jsr:@hono/hono";
 import { cors } from "jsr:@hono/hono/cors";
 import * as kv from "./kv_store.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
 
 const app = new Hono();
 app.use(
@@ -19,8 +19,8 @@ const PREFIX = "/make-server-e2702d20";
 
 function adminClient() {
   return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_URL"),
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   );
 }
 
@@ -146,7 +146,7 @@ Tarihler gg.aa.yyyy formatında. Sayıların Türkçe binlik ayracını (.) temi
 
     if (mime === "application/pdf") {
       // PDF sayfa sayısı kontrolü (max 5 — alakasız belge ihtimali)
-      const sayfa = pdfSayfaSayisi(d.base64);
+      const sayfa = await pdfSayfaSayisi(d.base64);
       if (sayfa === 0) {
         reddedilen.push({ ad: d.ad, sebep: "PDF okunamadı veya bozuk" });
         continue;
@@ -489,15 +489,15 @@ async function rateLimitOk(ip: string): Promise<{ ok: boolean; sebep?: string }>
 }
 
 // PDF sayfa sayısını base64 içeriğinden tahmin et — pdf-lib ile kesin sayım
-function pdfSayfaSayisi(base64: string): number {
+async function pdfSayfaSayisi(base64: string): Promise<number> {
   try {
-    const bin = atob(base64);
-    const eslesme = bin.match(/\/Type\s*\/Page[^s]/g);
-    const sayi = eslesme ? eslesme.length : 0;
-    return sayi > 0 ? sayi : 1;
+    const { PDFDocument } = await import("npm:pdf-lib@1.17.1");
+    const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bin, { ignoreEncryption: true });
+    return doc.getPageCount();
   } catch (e: any) {
     console.log("pdf sayfa sayımı hata:", e.message);
-    return 1;
+    return 0;
   }
 }
 

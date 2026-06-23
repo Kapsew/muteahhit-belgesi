@@ -1,9 +1,11 @@
-import { Hono } from "jsr:@hono/hono";
-import { cors } from "jsr:@hono/hono/cors";
+import { Hono } from "npm:hono";
+import { cors } from "npm:hono/cors";
+import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
+import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
 
 const app = new Hono();
+app.use("*", logger(console.log));
 app.use(
   "/*",
   cors({
@@ -19,8 +21,8 @@ const PREFIX = "/make-server-e2702d20";
 
 function adminClient() {
   return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get("SUPABASE_URL"),
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   );
 }
 
@@ -49,165 +51,6 @@ async function ensureBucket() {
 
 /* ── Health ── */
 app.get(`${PREFIX}/health`, (c) => c.json({ status: "ok" }));
-
-/* OCR route — en üste taşındı */
-app.post(`${PREFIX}/ocr-iskan`, async (c) => {
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) return c.json({ error: "ANTHROPIC_API_KEY tanımlı değil" }, 500);
-
-  // IP bazlı rate limit
-  const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const rl = await rateLimitOk(ip);
-  if (!rl.ok) return c.json({ error: rl.sebep }, 429);
-
-  let body: any;
-  try { body = await c.req.json(); } catch { return c.json({ error: "Geçersiz JSON" }, 400); }
-  const dosyalar = body?.dosyalar;
-  if (!Array.isArray(dosyalar) || dosyalar.length === 0) {
-    return c.json({ error: "En az bir belge gereklidir" }, 400);
-  }
-  if (dosyalar.length > MAX_BELGE) {
-    return c.json({ error: "Her seferinde yalnızca bir belge yükleyebilirsiniz" }, 400);
-  }
-
-  // Toplam ve dosya başı boyut kontrolü
-  let toplamBoyut = 0;
-  for (const d of dosyalar) {
-    const boyut = ((d.base64 as string)?.length || 0) * 0.75;
-    if (boyut > DOSYA_LIMIT) {
-      return c.json({ error: `"${d.ad}" 8MB sınırını aşıyor` }, 400);
-    }
-    toplamBoyut += boyut;
-  }
-  if (toplamBoyut > TOPLAM_LIMIT) {
-    return c.json({ error: `Toplam dosya boyutu 50MB sınırını aşıyor` }, 400);
-  }
-
-  const SISTEM = `Sen Türkiye'deki iskan (yapı kullanma izin) belgelerinden veri çıkaran bir yardımcısın.
-
-ÖNCE belgenin gerçekten bir iskan belgesinin ön sayfası olup olmadığını kontrol et:
-- "YAPI KULLANMA İZİN BELGESİ" başlığı veya numaralı madde alanları (10, 31, 36, 41, 66, 75, 76) var mı?
-- Eğer arka sayfa (Yapının Teknik Özellikleri tablosu — döşeme/duvar/ısıtma/çatı) ise iskan_belgesi_mi=false döndür.
-- Alakasız belge (fatura, sözleşme, kimlik vs.) ise iskan_belgesi_mi=false döndür.
-- Tüm bu durumlarda diğer alanları boş bırak.
-
-Madde haritası:
-  10. madde → belge onay tarihi = ISKAN TARIHI (gg.aa.yyyy)
-  29. madde → yapı kullanım tipi (konut / ticari / sanayi)
-  31. madde → yapı sahibi adı (arsa sahibi)
-  36. madde → müteahhit firma adı (tam unvan)
-  41. madde → sözleşme tarihi (gg.aa.yyyy)
-  66. madde → toplam inşaat alanı (m², sayı olarak)
-  73. madde → yapı yüksekliği (m, sayı olarak — opsiyonel)
-  75. madde → yapı sınıfı (I / II / III / IV / V — Roma rakamı)
-  76. madde → yapı grubu (A / B / C)
-
-Yapı sınıfı ve grubu birleştirilmiş döner: 75=III, 76=B → "III.B"
-Yapı kullanım tipi belirsizse "konut" varsayılan.
-Bir alan okunamıyorsa null döndür ve "guvenDusukAlanlar" dizisine alan adını ekle.
-Tarihler gg.aa.yyyy formatında. Sayıların Türkçe binlik ayracını (.) temizle.`;
-
-  const aracTanimi = {
-    name: "iskan_verisi_dondur",
-    description: "İskan belgesinden çıkarılan bilgileri yapılandırılmış döndürür",
-    input_schema: {
-      type: "object",
-      properties: {
-        iskan_belgesi_mi: { type: "boolean", description: "Belge gerçekten bir iskan belgesi mi" },
-        is: {
-          type: ["object", "null"],
-          properties: {
-            isAdi: { type: ["string","null"], description: "Yapı sahibi adı (31. madde)" },
-            sozlesmeTarihi: { type: ["string","null"], description: "gg.aa.yyyy" },
-            iskanTarihi: { type: ["string","null"], description: "gg.aa.yyyy" },
-            alanM2: { type: ["number","null"] },
-            sinif: { type: ["string","null"], description: "örn III.B" },
-            yapiTipi: { type: "string", enum: ["konut","ticari","sanayi"] },
-            muteahhit: { type: ["string","null"] },
-            yapiYuksekligi: { type: ["number","null"] },
-            guvenDusukAlanlar: {
-              type: "array",
-              items: { type: "string", enum: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit"] },
-            },
-          },
-          required: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit","guvenDusukAlanlar"],
-        },
-      },
-      required: ["iskan_belgesi_mi"],
-    },
-  };
-
-  const isler: any[] = [];
-  const reddedilen: { ad: string; sebep: string }[] = [];
-
-  for (const d of dosyalar) {
-    const mime = d.mimeType || "";
-    let icerikBlogu: any;
-
-    if (mime === "application/pdf") {
-      // PDF sayfa sayısı kontrolü (max 5 — alakasız belge ihtimali)
-      const sayfa = pdfSayfaSayisi(d.base64);
-      if (sayfa === 0) {
-        reddedilen.push({ ad: d.ad, sebep: "PDF okunamadı veya bozuk" });
-        continue;
-      }
-      if (sayfa > MAX_SAYFA) {
-        reddedilen.push({ ad: d.ad, sebep: `${sayfa} sayfalık PDF — lütfen iskan belgesinin yalnızca ön sayfasını yükleyiniz` });
-        continue;
-      }
-      icerikBlogu = { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.base64 } };
-    } else if (mime.startsWith("image/")) {
-      icerikBlogu = { type: "image", source: { type: "base64", media_type: mime, data: d.base64 } };
-    } else {
-      reddedilen.push({ ad: d.ad, sebep: "Desteklenmeyen dosya tipi (PDF/JPG/PNG kabul edilir)" });
-      continue;
-    }
-
-    const istek = {
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      system: SISTEM,
-      tools: [aracTanimi],
-      tool_choice: { type: "tool", name: "iskan_verisi_dondur" },
-      messages: [{
-        role: "user",
-        content: [
-          icerikBlogu,
-          { type: "text", text: "Bu belgeyi incele ve iskan_verisi_dondur aracını çağır. Önce iskan_belgesi_mi alanını doğru belirle." },
-        ],
-      }],
-    };
-
-    try {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-        body: JSON.stringify(istek),
-      });
-      if (!r.ok) {
-        const txt = await r.text();
-        console.log("Anthropic API hata:", r.status, txt.slice(0, 300));
-        reddedilen.push({ ad: d.ad, sebep: "Sunucu hatası, lütfen tekrar deneyiniz" });
-        continue;
-      }
-      const yanit = await r.json();
-      const tool = yanit.content?.find((b: any) => b.type === "tool_use");
-      const cikti = tool?.input;
-
-      if (!cikti?.iskan_belgesi_mi || !cikti.is) {
-        reddedilen.push({ ad: d.ad, sebep: "Bu belge bir iskan (yapı kullanma izin) belgesi değil" });
-        continue;
-      }
-      isler.push({ ...cikti.is, _dosyaAdi: d.ad });
-    } catch (e: any) {
-      console.log("OCR çağrı hatası:", e.message);
-      reddedilen.push({ ad: d.ad, sebep: "Belge işlenirken hata oluştu" });
-    }
-  }
-
-  return c.json({ isler, reddedilen });
-});
-
 
 /* ── Signup ── */
 app.post(`${PREFIX}/signup`, async (c) => {
@@ -489,16 +332,173 @@ async function rateLimitOk(ip: string): Promise<{ ok: boolean; sebep?: string }>
 }
 
 // PDF sayfa sayısını base64 içeriğinden tahmin et — pdf-lib ile kesin sayım
-function pdfSayfaSayisi(base64: string): number {
+async function pdfSayfaSayisi(base64: string): Promise<number> {
   try {
-    const bin = atob(base64);
-    const eslesme = bin.match(/\/Type\s*\/Page[^s]/g);
-    const sayi = eslesme ? eslesme.length : 0;
-    return sayi > 0 ? sayi : 1;
+    const { PDFDocument } = await import("npm:pdf-lib@1.17.1");
+    const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const doc = await PDFDocument.load(bin, { ignoreEncryption: true });
+    return doc.getPageCount();
   } catch (e: any) {
     console.log("pdf sayfa sayımı hata:", e.message);
-    return 1;
+    return 0;
   }
 }
+
+app.post(`${PREFIX}/ocr-iskan`, async (c) => {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return c.json({ error: "ANTHROPIC_API_KEY tanımlı değil" }, 500);
+
+  // IP bazlı rate limit
+  const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const rl = await rateLimitOk(ip);
+  if (!rl.ok) return c.json({ error: rl.sebep }, 429);
+
+  let body: any;
+  try { body = await c.req.json(); } catch { return c.json({ error: "Geçersiz JSON" }, 400); }
+  const dosyalar = body?.dosyalar;
+  if (!Array.isArray(dosyalar) || dosyalar.length === 0) {
+    return c.json({ error: "En az bir belge gereklidir" }, 400);
+  }
+  if (dosyalar.length > MAX_BELGE) {
+    return c.json({ error: "Her seferinde yalnızca bir belge yükleyebilirsiniz" }, 400);
+  }
+
+  // Toplam ve dosya başı boyut kontrolü
+  let toplamBoyut = 0;
+  for (const d of dosyalar) {
+    const boyut = ((d.base64 as string)?.length || 0) * 0.75;
+    if (boyut > DOSYA_LIMIT) {
+      return c.json({ error: `"${d.ad}" 8MB sınırını aşıyor` }, 400);
+    }
+    toplamBoyut += boyut;
+  }
+  if (toplamBoyut > TOPLAM_LIMIT) {
+    return c.json({ error: `Toplam dosya boyutu 50MB sınırını aşıyor` }, 400);
+  }
+
+  const SISTEM = `Sen Türkiye'deki iskan (yapı kullanma izin) belgelerinden veri çıkaran bir yardımcısın.
+
+ÖNCE belgenin gerçekten bir iskan belgesinin ön sayfası olup olmadığını kontrol et:
+- "YAPI KULLANMA İZİN BELGESİ" başlığı veya numaralı madde alanları (10, 31, 36, 41, 66, 75, 76) var mı?
+- Eğer arka sayfa (Yapının Teknik Özellikleri tablosu — döşeme/duvar/ısıtma/çatı) ise iskan_belgesi_mi=false döndür.
+- Alakasız belge (fatura, sözleşme, kimlik vs.) ise iskan_belgesi_mi=false döndür.
+- Tüm bu durumlarda diğer alanları boş bırak.
+
+Madde haritası:
+  10. madde → belge onay tarihi = ISKAN TARIHI (gg.aa.yyyy)
+  29. madde → yapı kullanım tipi (konut / ticari / sanayi)
+  31. madde → yapı sahibi adı (arsa sahibi)
+  36. madde → müteahhit firma adı (tam unvan)
+  41. madde → sözleşme tarihi (gg.aa.yyyy)
+  66. madde → toplam inşaat alanı (m², sayı olarak)
+  73. madde → yapı yüksekliği (m, sayı olarak — opsiyonel)
+  75. madde → yapı sınıfı (I / II / III / IV / V — Roma rakamı)
+  76. madde → yapı grubu (A / B / C)
+
+Yapı sınıfı ve grubu birleştirilmiş döner: 75=III, 76=B → "III.B"
+Yapı kullanım tipi belirsizse "konut" varsayılan.
+Bir alan okunamıyorsa null döndür ve "guvenDusukAlanlar" dizisine alan adını ekle.
+Tarihler gg.aa.yyyy formatında. Sayıların Türkçe binlik ayracını (.) temizle.`;
+
+  const aracTanimi = {
+    name: "iskan_verisi_dondur",
+    description: "İskan belgesinden çıkarılan bilgileri yapılandırılmış döndürür",
+    input_schema: {
+      type: "object",
+      properties: {
+        iskan_belgesi_mi: { type: "boolean", description: "Belge gerçekten bir iskan belgesi mi" },
+        is: {
+          type: ["object", "null"],
+          properties: {
+            isAdi: { type: ["string","null"], description: "Yapı sahibi adı (31. madde)" },
+            sozlesmeTarihi: { type: ["string","null"], description: "gg.aa.yyyy" },
+            iskanTarihi: { type: ["string","null"], description: "gg.aa.yyyy" },
+            alanM2: { type: ["number","null"] },
+            sinif: { type: ["string","null"], description: "örn III.B" },
+            yapiTipi: { type: "string", enum: ["konut","ticari","sanayi"] },
+            muteahhit: { type: ["string","null"] },
+            yapiYuksekligi: { type: ["number","null"] },
+            guvenDusukAlanlar: {
+              type: "array",
+              items: { type: "string", enum: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit"] },
+            },
+          },
+          required: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit","guvenDusukAlanlar"],
+        },
+      },
+      required: ["iskan_belgesi_mi"],
+    },
+  };
+
+  const isler: any[] = [];
+  const reddedilen: { ad: string; sebep: string }[] = [];
+
+  for (const d of dosyalar) {
+    const mime = d.mimeType || "";
+    let icerikBlogu: any;
+
+    if (mime === "application/pdf") {
+      // PDF sayfa sayısı kontrolü (max 5 — alakasız belge ihtimali)
+      const sayfa = await pdfSayfaSayisi(d.base64);
+      if (sayfa === 0) {
+        reddedilen.push({ ad: d.ad, sebep: "PDF okunamadı veya bozuk" });
+        continue;
+      }
+      if (sayfa > MAX_SAYFA) {
+        reddedilen.push({ ad: d.ad, sebep: `${sayfa} sayfalık PDF — lütfen iskan belgesinin yalnızca ön sayfasını yükleyiniz` });
+        continue;
+      }
+      icerikBlogu = { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.base64 } };
+    } else if (mime.startsWith("image/")) {
+      icerikBlogu = { type: "image", source: { type: "base64", media_type: mime, data: d.base64 } };
+    } else {
+      reddedilen.push({ ad: d.ad, sebep: "Desteklenmeyen dosya tipi (PDF/JPG/PNG kabul edilir)" });
+      continue;
+    }
+
+    const istek = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: SISTEM,
+      tools: [aracTanimi],
+      tool_choice: { type: "tool", name: "iskan_verisi_dondur" },
+      messages: [{
+        role: "user",
+        content: [
+          icerikBlogu,
+          { type: "text", text: "Bu belgeyi incele ve iskan_verisi_dondur aracını çağır. Önce iskan_belgesi_mi alanını doğru belirle." },
+        ],
+      }],
+    };
+
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify(istek),
+      });
+      if (!r.ok) {
+        const txt = await r.text();
+        console.log("Anthropic API hata:", r.status, txt.slice(0, 300));
+        reddedilen.push({ ad: d.ad, sebep: "Sunucu hatası, lütfen tekrar deneyiniz" });
+        continue;
+      }
+      const yanit = await r.json();
+      const tool = yanit.content?.find((b: any) => b.type === "tool_use");
+      const cikti = tool?.input;
+
+      if (!cikti?.iskan_belgesi_mi || !cikti.is) {
+        reddedilen.push({ ad: d.ad, sebep: "Bu belge bir iskan (yapı kullanma izin) belgesi değil" });
+        continue;
+      }
+      isler.push({ ...cikti.is, _dosyaAdi: d.ad });
+    } catch (e: any) {
+      console.log("OCR çağrı hatası:", e.message);
+      reddedilen.push({ ad: d.ad, sebep: "Belge işlenirken hata oluştu" });
+    }
+  }
+
+  return c.json({ isler, reddedilen });
+});
 
 Deno.serve(app.fetch);
