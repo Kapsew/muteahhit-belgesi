@@ -102,7 +102,7 @@ export function HizliHesapPage() {
   return (
     <div className="min-h-screen">
       <UstBar />
-      <div className={`${adim === 0 ? "max-w-5xl" : "max-w-3xl"} mx-auto py-8 px-4 transition-[max-width] duration-200`}>
+      <div className="max-w-3xl mx-auto py-8 px-4">
         <header className="mb-6">
           <h1 className="text-2xl font-medium text-[#0B1D3A]">
             {isUpgrade ? "Yeni iş deneyimi ekle" : "Müteahhitlik yeterlilik analizi"}

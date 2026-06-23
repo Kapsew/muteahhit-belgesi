@@ -397,6 +397,21 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                             </span>
                             <span className="text-[#D8DEE9]">·</span>
                             <span className="flex items-center gap-1">
+                              <span className="text-[#8A93A6]">Üst/alt kat:</span>
+                              <EditCell
+                                value={is.katSayisiUst != null ? String(is.katSayisiUst) : "—"}
+                                onChange={(v) => updIs(is.id, { katSayisiUst: parseFloat(v) || undefined })}
+                                className="font-medium text-[#0B1D3A] min-w-[20px]"
+                              />
+                              <span className="text-[#8A93A6]">/</span>
+                              <EditCell
+                                value={is.katSayisiAlt != null ? String(is.katSayisiAlt) : "—"}
+                                onChange={(v) => updIs(is.id, { katSayisiAlt: parseFloat(v) || undefined })}
+                                className="font-medium text-[#0B1D3A] min-w-[20px]"
+                              />
+                            </span>
+                            <span className="text-[#D8DEE9]">·</span>
+                            <span className="flex items-center gap-1">
                               <span className="text-[#8A93A6]">Yükseklik:</span>
                               <EditCell
                                 value={is.yapiYuksekligiM != null ? String(is.yapiYuksekligiM) : "—"}

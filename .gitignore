@@ -15,3 +15,5 @@ dist
 .yedek-sanayi/
 .yedek-parsel/
 .silinen-yedek/
+.vercel
+.env*
