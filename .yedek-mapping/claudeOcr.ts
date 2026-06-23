@@ -23,11 +23,6 @@ interface ClaudeIs {
   katSayisiToplam?: number | null;
   katSayisiUst?: number | null;
   katSayisiAlt?: number | null;
-  adaNo?: string | null;
-  parselNo?: string | null;
-  blokNo?: string | null;
-  parselKullanimAmaci?: string | null;
-  bagimsizBolumler?: Array<{ kod: string; ad: string; adet: number; yuzolcumu: number }> | null;
   guvenDusukAlanlar: string[];
   _dosyaAdi?: string;
 }
@@ -86,11 +81,6 @@ export async function claudeOcr(files: File[]): Promise<OcrSonucu> {
     katSayisiToplam: typeof x.katSayisiToplam === "number" ? x.katSayisiToplam : undefined,
     katSayisiUst: typeof x.katSayisiUst === "number" ? x.katSayisiUst : undefined,
     katSayisiAlt: typeof x.katSayisiAlt === "number" ? x.katSayisiAlt : undefined,
-    adaNo: x.adaNo ?? undefined,
-    parselNo: x.parselNo ?? undefined,
-    blokNo: x.blokNo ?? undefined,
-    parselKullanimAmaci: x.parselKullanimAmaci ?? undefined,
-    bagimsizBolumler: Array.isArray(x.bagimsizBolumler) ? x.bagimsizBolumler : undefined,
   }));
 
   return { isler, reddedilen: data.reddedilen ?? [] };

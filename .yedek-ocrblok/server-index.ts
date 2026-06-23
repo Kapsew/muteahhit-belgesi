@@ -105,24 +105,6 @@ Madde haritası:
   75. madde → yapı sınıfı (I / II / III / IV / V — Roma rakamı)
   76. madde → yapı grubu (A / B / C)
 
-PARSEL / BLOK BİLGİSİ (opsiyonel ama varsa çıkar):
-  3. madde  → ada no (adaNo)
-  5. madde  → parsel no (parselNo)
-  6. madde  → blok no (blokNo) — "A", "B", "C", "ABLOK" gibi; yoksa null
-
-BAĞIMSIZ BÖLÜM DAĞILIMI (varsa çıkar — çoklu blok ve eksik blok kontrolü için):
-  54. madde → kullanım amacı kodu (CC standardı: 1110/1121 konut, 1220 ofis, 1251 sanayi vb.)
-  55. madde → bağımsız bölüm sayısı (her kod için adet)
-  56. madde → yüzölçümü (her kod için, m²)
-  61. madde → yapı inşaat alanı (kullanım amacına göre, blok başına)
-  → bagimsizBolumler dizisine [{ kod, ad, adet, yuzolcumu }] olarak ekle
-
-YAPI TİPİ TESPİTİ (54. madde CC kodları ile):
-  11XX (1110,1121,1122,1130) → konut    |  1211 otel, 1220 ofis, 1230 dükkan → ticari
-  1251 fabrika, 1252 tarımsal → sanayi   |  bağımsız bölümlerin toplam yüzölçümü hangi tipte fazlaysa o
-  Belirsizse → "konut" + guvenDusukAlanlar'a "yapiTipi" ekle
-  DİKKAT: 29. madde "konut+işyeri" yazsa bile asıl belirleyici 54. madde dağılımıdır.
-
 Yapı sınıfı ve grubu birleştirilmiş döner: 75=III, 76=B → "III.B"
 Yapı kullanım tipi belirsizse "konut" varsayılan.
 Bir alan okunamıyorsa null döndür ve "guvenDusukAlanlar" dizisine alan adını ekle.
@@ -149,27 +131,9 @@ Tarihler gg.aa.yyyy formatında. Sayıların Türkçe binlik ayracını (.) temi
             katSayisiToplam: { type: ["number","null"], description: "toplam kat sayısı (69. madde)" },
             katSayisiUst: { type: ["number","null"], description: "yol kotu üstü kat sayısı (68. madde)" },
             katSayisiAlt: { type: ["number","null"], description: "yol kotu altı kat sayısı (67. madde)" },
-            adaNo: { type: ["string","null"], description: "ada no (3. madde)" },
-            parselNo: { type: ["string","null"], description: "parsel no (5. madde)" },
-            blokNo: { type: ["string","null"], description: "blok no (6. madde) — A/B/C, yoksa null" },
-            parselKullanimAmaci: { type: ["string","null"], description: "parsel kullanım amacı (29. madde, referans)" },
-            bagimsizBolumler: {
-              type: ["array","null"],
-              description: "54-56+61. maddeden bağımsız bölüm dağılımı",
-              items: {
-                type: "object",
-                properties: {
-                  kod: { type: "string", description: "CC kullanım kodu (54)" },
-                  ad: { type: "string", description: "kullanım amacı adı" },
-                  adet: { type: "integer", description: "bağımsız bölüm sayısı (55)" },
-                  yuzolcumu: { type: "number", description: "yüzölçümü m² (56)" },
-                },
-                required: ["kod","ad","adet","yuzolcumu"],
-              },
-            },
             guvenDusukAlanlar: {
               type: "array",
-              items: { type: "string", enum: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit","blokNo","bolumDagilimi"] },
+              items: { type: "string", enum: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit"] },
             },
           },
           required: ["isAdi","sozlesmeTarihi","iskanTarihi","alanM2","sinif","yapiTipi","muteahhit","guvenDusukAlanlar"],

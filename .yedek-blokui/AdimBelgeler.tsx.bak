@@ -99,33 +99,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
   };
 
   // Asıl OCR çağrısı (tek dosya) — hem direkt hem sayfa seçimi sonrası kullanılır
-  // Aynı blok daha önce yüklendi mi? (ada+parsel+blok birebir)
-  const ayniBlokVarMi = (yeniIs: Is): Is | null => {
-    if (!yeniIs.adaNo || !yeniIs.parselNo) return null;
-    const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-    return isler.find((i) =>
-      norm(i.adaNo) === norm(yeniIs.adaNo) &&
-      norm(i.parselNo) === norm(yeniIs.parselNo) &&
-      norm(i.blokNo) === norm(yeniIs.blokNo)
-    ) || null;
-  };
-
-  // Eksik blok: bağımsız bölüm toplamı (61) ile toplam alan (66) uyuşuyor mu?
-  const eksikBlokMesaji = (is: Is): string | null => {
-    if (!is.bagimsizBolumler || is.bagimsizBolumler.length === 0 || !is.alanM2) return null;
-    const dagilim = is.bagimsizBolumler.reduce((acc, b) => acc + (b.adet * b.yuzolcumu), 0);
-    if (dagilim <= 0) return null;
-    const fark = is.alanM2 - dagilim;
-    if (Math.abs(fark) / is.alanM2 > 0.05) {
-      return `"${is.isAdi}" için bağımsız bölüm toplamı ${Math.round(dagilim).toLocaleString("tr-TR")} m² — ` +
-             `iskandaki toplam ${is.alanM2.toLocaleString("tr-TR")} m² görünüyor. ` +
-             `Aynı parselde başka bir blok daha olabilir; varsa onu da ekleyiniz.`;
-    }
-    return null;
-  };
-
-  const [eksikBlokUyari, setEksikBlokUyari] = useState<string | null>(null);
-
   const ocrCalistir = async (dosya: File) => {
     setYukleniyor(true);
     try {
@@ -134,29 +107,15 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
       if (yeni.length === 0 && red.length === 0) {
         setHata("Belgelerden bilgi çıkarılamadı. Belgenin okunaklı olduğundan emin olup tekrar deneyiniz.");
       } else if (yeni.length > 0) {
-        // Önce blok bazlı tekrar (en kesin): aynı ada/parsel/blok
-        const blokTekrar = yeni.map(ayniBlokVarMi).find((x) => x != null);
-        if (blokTekrar) {
+        const tekrarlar = yeni.filter(tekrarMi);
+        if (tekrarlar.length > 0) {
           setTekrarUyari(
-            `Bu blok zaten yüklü: ${blokTekrar.isAdi}` +
-            `${blokTekrar.blokNo ? ` (${blokTekrar.blokNo} blok)` : ""}. ` +
-            `Aynı belgeyi ikinci kez yüklediniz. Yine de eklendi; tekrarsa silebilirsiniz.`
+            "Bu iş daha önce eklenmiş görünüyor (aynı sözleşme tarihi, sınıf ve alan). " +
+            "Yine de eklendi; tekrar saymak istemiyorsanız aşağıdan silebilirsiniz."
           );
         } else {
-          // Blok bilgisi yoksa eski kontrole düş (sözleşme+sınıf+alan)
-          const tekrarlar = yeni.filter(tekrarMi);
-          if (tekrarlar.length > 0) {
-            setTekrarUyari(
-              "Bu iş daha önce eklenmiş görünüyor (aynı sözleşme tarihi, sınıf ve alan). " +
-              "Yine de eklendi; tekrar saymak istemiyorsanız aşağıdan silebilirsiniz."
-            );
-          } else {
-            setTekrarUyari(null);
-          }
+          setTekrarUyari(null);
         }
-        // Eksik blok kontrolü (61 vs 66)
-        const eksik = yeni.map(eksikBlokMesaji).find((m) => m != null) || null;
-        setEksikBlokUyari(eksik);
         setIsler([...isler, ...yeni]);
       }
     } catch (e: any) {
@@ -316,13 +275,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
         </div>
       )}
 
-      {eksikBlokUyari && (
-        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-blue-900 leading-relaxed">{eksikBlokUyari}</p>
-        </div>
-      )}
-
       {hata && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-red-700 mt-0.5 flex-shrink-0" />
@@ -430,11 +382,6 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                       <tr className={`border-t border-[#E8E4DC] ${rowBg}`}>
                         <td className="px-2 py-2.5">
                           <EditCell value={is.isAdi} onChange={(v) => updIs(is.id, { isAdi: v })} />
-                          {is.blokNo && (
-                            <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded text-[10px] font-medium whitespace-nowrap">
-                              {is.blokNo} blok
-                            </span>
-                          )}
                         </td>
                         <td className={`px-2 py-2.5 ${dusukUyari("sozlesmeTarihi") ? "bg-amber-50 text-amber-900 rounded" : ""}`}>
                           <EditCell value={is.sozlesmeTarihi} onChange={(v) => updIs(is.id, { sozlesmeTarihi: v })} />

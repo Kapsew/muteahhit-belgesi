@@ -21,16 +21,6 @@ export interface Is {
   katSayisiToplam?: number;     // toplam kat sayısı (69. madde)
   katSayisiUst?: number;        // yol kotu üstü kat sayısı (68. madde)
   katSayisiAlt?: number;        // yol kotu altı kat sayısı (67. madde)
-  adaNo?: string;               // ada no (3. madde)
-  parselNo?: string;            // parsel no (5. madde)
-  blokNo?: string;              // blok no (6. madde) — A/B/C
-  parselKullanimAmaci?: string; // parsel kullanım amacı (29. madde, referans)
-  bagimsizBolumler?: Array<{    // 54-56+61. madde dağılımı
-    kod: string;
-    ad: string;
-    adet: number;
-    yuzolcumu: number;
-  }>;
 }
 
 export interface OturumDurumu {

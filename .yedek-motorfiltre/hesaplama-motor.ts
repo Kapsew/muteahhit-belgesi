@@ -581,7 +581,6 @@ export interface TamHesaplaGirdisi {
   id: string;
   sozlesmeTarihi: string;
   iskanTarihi?: string;
-  geciciKabulTarihi?: string;   // taahhüt/kamu: son 5/15 filtresinde iskan yerine tercih edilir
   ruhsatSinifi: string;
   ymoSinifi?: string;
   insaatAlaniM2: number;
@@ -641,20 +640,10 @@ export function tamHesapla(
   const be5  = new Date(bugun); be5.setFullYear(be5.getFullYear() - 5);
   const be15 = new Date(bugun); be15.setFullYear(be15.getFullYear() - 15);
 
-  // Son 5/15 yıl filtresinin baz tarihi:
-  //  - kat karşılığı → iskan tarihi (değişmedi)
-  //  - taahhüt/kamu  → geçici kabul tarihi tercih edilir, yoksa iskan
-  const filtreTarihi = (g: TamHesaplaGirdisi): Date | null => {
-    if (g.isDeneyimiTipi === "taahhut" && g.geciciKabulTarihi) {
-      return new Date(g.geciciKabulTarihi);
-    }
-    return g.iskanTarihi ? new Date(g.iskanTarihi) : null;
-  };
-
   const isler: HesaplananIs[] = isGirisleri.map(g => ({
     ...g,
     sonuc: isHesapla(g),
-    iskanDate: filtreTarihi(g),
+    iskanDate: g.iskanTarihi ? new Date(g.iskanTarihi) : null,
   }));
 
   // Yöntem 2: Son 15 yıldaki en büyük iş (Bakanlık D31)

@@ -35,7 +35,6 @@ export function islerToGirdi(isler: Is[]): TamHesaplaGirdisi[] {
     id: is.id,
     sozlesmeTarihi: trTariheIso(is.sozlesmeTarihi),
     iskanTarihi: is.iskanTarihi ? trTariheIso(is.iskanTarihi) : undefined,
-    geciciKabulTarihi: is.geciciKabulTarihi ? trTariheIso(is.geciciKabulTarihi) : undefined,
     ruhsatSinifi: is.sinif || "III.B",
     insaatAlaniM2: typeof is.alanM2 === "number" ? is.alanM2 : 0,
     isDeneyimiTipi: isTuruToDeneyim(is.isTuru),
