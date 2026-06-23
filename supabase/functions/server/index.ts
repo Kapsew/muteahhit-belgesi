@@ -85,11 +85,11 @@ app.post(`${PREFIX}/ocr-iskan`, async (c) => {
 
   const SISTEM = `Sen Türkiye'deki iskan (yapı kullanma izin) belgelerinden veri çıkaran bir yardımcısın.
 
-ÖNCE belgenin gerçekten bir iskan belgesinin ön sayfası olup olmadığını kontrol et:
+ÖNCE belgenin gerçekten bir iskan belgesi içerip içermediğini kontrol et:
 - "YAPI KULLANMA İZİN BELGESİ" başlığı veya numaralı madde alanları (10, 31, 36, 41, 66, 75, 76) var mı?
-- Eğer arka sayfa (Yapının Teknik Özellikleri tablosu — döşeme/duvar/ısıtma/çatı) ise iskan_belgesi_mi=false döndür.
-- Alakasız belge (fatura, sözleşme, kimlik vs.) ise iskan_belgesi_mi=false döndür.
-- Tüm bu durumlarda diğer alanları boş bırak.
+- Belge BİRDEN ÇOK SAYFA içerebilir. Bu durumda "YAPI KULLANMA İZİN BELGESİ" başlıklı ÖN SAYFAYI bul ve verileri ORADAN çıkar. Arka sayfa (Yapının Teknik Özellikleri tablosu — döşeme/duvar/ısıtma/çatı) ek bilgidir; onu yok say ama belgeyi REDDETME.
+- Yalnızca HİÇBİR sayfada iskan ön sayfası yoksa (sadece teknik tablo, ya da fatura/sözleşme/kimlik gibi alakasız belge) iskan_belgesi_mi=false döndür.
+- iskan_belgesi_mi=false ise diğer alanları boş bırak.
 
 Madde haritası:
   10. madde → belge onay tarihi = ISKAN TARIHI (gg.aa.yyyy)
@@ -469,7 +469,7 @@ const MB = 1024 * 1024;
 const DOSYA_LIMIT = 8 * MB;
 const TOPLAM_LIMIT = 50 * MB;
 const MAX_BELGE = 1;
-const MAX_SAYFA = 1;
+const MAX_SAYFA = 5;  // çok sayfalı iskan belgeleri kabul; Claude ön sayfayı bulur
 
 async function rateLimitOk(ip: string): Promise<{ ok: boolean; sebep?: string }> {
   const now = Math.floor(Date.now() / 1000);

@@ -122,9 +122,9 @@ export function AdimBelgeler({ isler, setIsler, onIleri }: Props) {
     <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6">
       <h2 className="text-lg font-medium text-[#0B1D3A] mb-1">İskan belgelerinizi yükleyiniz</h2>
       <p className="text-sm text-[#5A6478] mb-4 leading-relaxed">
-        Yapı kullanma izin belgelerinizi (iskan) yükleyiniz. Belgenin{" "}
-        <strong className="font-medium text-[#0B1D3A]">ön sayfasının (yapı kullanma izin belgesi) okunaklı olması</strong> yeterlidir.
-        Çok sayfalı PDF'ler kabul edilir; sistem ön sayfayı otomatik bulur. Telefon fotoğrafı (JPG/PNG) da olur — net ve düz çekilmiş olsun.
+        Yapı kullanma izin belgelerinizi (iskan) yükleyiniz. Her bir belgenin yalnızca{" "}
+        <strong className="font-medium text-[#0B1D3A]">yalnızca ön sayfasını</strong> yükleyiniz (her belge tek sayfa). Çoklu sayfalı PDF'ler kabul edilmez. Telefon fotoğrafı (JPG/PNG) en kolay yoldur
+        yeterlidir.
       </p>
 
       <label
