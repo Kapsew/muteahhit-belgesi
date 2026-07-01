@@ -5,7 +5,6 @@ import { CheckCircle2, Building2, FileText } from "lucide-react";
 import { Award, LayoutDashboard } from "lucide-react";
 import { Stepper } from "./Stepper";
 import { AdimBelgeler } from "./AdimBelgeler";
-import { AdimMali } from "./AdimMali";
 import { AdimIletisim } from "./AdimIletisim";
 import { AdimRapor } from "./AdimRapor";
 import { hesaplaIsler } from "./hesapla-adapter";
@@ -29,9 +28,8 @@ export function HizliHesapPage() {
   const loc = useLocation();
   const isUpgrade = (loc.state as any)?.isUpgrade === true;
   const upgradeId = (loc.state as any)?.companyId as string | undefined;
-  const [adim, setAdim] = useState<0 | 1 | 2>(0);
+  const [adim, setAdim] = useState<0 | 1>(0);
   const [isler, setIsler] = useState<Is[]>([]);
-  const [maliBeyanname, setMaliBeyanname] = useState<File | null>(null);
   const [iletisim, setIletisim] = useState(BOS_ILETISIM);
 
   const [hesap, setHesap] = useState<TamHesaplama | null>(null);
@@ -62,7 +60,7 @@ export function HizliHesapPage() {
     setGonderiliyor(true);
     try {
       const sonuc = hesaplaIsler(isler);
-      const kayitSonucu = await kayitYap(iletisim, isler, sonuc, maliBeyanname, upgradeId);
+      const kayitSonucu = await kayitYap(iletisim, isler, sonuc, null, upgradeId);
       setHesap(sonuc);
       setKayit(kayitSonucu);
     } catch (e: any) {
@@ -104,10 +102,13 @@ export function HizliHesapPage() {
       <UstBar />
       <div className={`${adim === 0 ? "max-w-5xl" : "max-w-3xl"} mx-auto py-8 px-4 transition-[max-width] duration-200`}>
         <header className="mb-6">
-          <h1 className="text-2xl font-medium text-[#0B1D3A]">
+          <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2.5">
+            {isUpgrade ? "Belge güncelleme" : "Yeterlilik analizi"}
+          </div>
+          <h1 className="text-[#0B1D3A] text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>
             {isUpgrade ? "Yeni iş deneyimi ekle" : "Müteahhitlik yeterlilik analizi"}
           </h1>
-          <p className="text-sm text-[#5A6478] mt-1">
+          <p className="text-sm text-[#5A6478] mt-2 max-w-2xl leading-relaxed">
             {isUpgrade
               ? "Yeni iş deneyiminizi ekleyin; belgeniz güncel verilerle yeniden hesaplansın."
               : "İskan belgelerinizi yükleyin, doğru grup tespitini uzmanlarımız hazırlasın."}
@@ -118,14 +119,6 @@ export function HizliHesapPage() {
 
         {adim === 0 && <AdimBelgeler isler={isler} setIsler={setIsler} onIleri={() => setAdim(1)} mevcutCompanyId={upgradeId} />}
         {adim === 1 && (
-          <AdimMali
-            dosya={maliBeyanname}
-            setDosya={setMaliBeyanname}
-            onGeri={() => setAdim(0)}
-            onIleri={() => setAdim(2)}
-          />
-        )}
-        {adim === 2 && (
           <>
             {hata && (
               <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -136,7 +129,7 @@ export function HizliHesapPage() {
               <OnayEkrani
                 firmaUnvani={iletisim.firmaUnvani}
                 isSayisi={isler.length}
-                onGeri={() => setAdim(1)}
+                onGeri={() => setAdim(0)}
                 onOde={onOde}
                 gonderiliyor={gonderiliyor}
               />
@@ -144,7 +137,7 @@ export function HizliHesapPage() {
               <AdimIletisim
                 iletisim={iletisim}
                 setIletisim={setIletisim}
-                onGeri={() => setAdim(1)}
+                onGeri={() => setAdim(0)}
                 onOde={onOde}
                 gonderiliyor={gonderiliyor}
               />
@@ -165,7 +158,8 @@ function OnayEkrani({
 }) {
   return (
     <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6">
-      <h2 className="text-lg font-medium text-[#0B1D3A] mb-1">Bilgileri onaylayın</h2>
+      <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2">Son adım</div>
+      <h2 className="text-[#0B1D3A] text-xl mb-1.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Bilgileri onaylayın</h2>
       <p className="text-sm text-[#5A6478] mb-5">
         Yeni iş deneyiminiz mevcut firmanıza eklenecek ve belgeniz yeniden hesaplanacaktır.
       </p>

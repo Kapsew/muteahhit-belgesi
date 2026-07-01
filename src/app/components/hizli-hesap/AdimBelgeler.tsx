@@ -5,6 +5,8 @@ import { claudeOcr, type ReddedilenBelge } from "./claudeOcr";
 import { PdfSayfaSecici } from "./PdfSayfaSecici";
 import * as pdfjsLib from "pdfjs-dist";
 import { mockOcr } from "./mockOcr";
+import { guncelSinifStr } from "../hesaplama-motor";
+import { sinifNumerik, sinifRoman } from "../sinif-format";
 
 // Sanayi + 02.12.2019 sonrası sözleşme → müteahhit yetki belge grubu sorulur.
 // 02.12.2019 öncesinde yetki belge sınıf sistemi olmadığından sorulmaz.
@@ -249,11 +251,10 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
 
   return (
     <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6">
-      <h2 className="text-lg font-medium text-[#0B1D3A] mb-1">İskan belgelerinizi yükleyiniz</h2>
+      <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2">Adım 1</div>
+      <h2 className="text-[#0B1D3A] text-xl mb-1.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>İskan belgelerinizi yükleyiniz</h2>
       <p className="text-sm text-[#5A6478] mb-4 leading-relaxed">
-        Yapı kullanma izin belgelerinizi (iskan) yükleyiniz. Belgenin{" "}
-        <strong className="font-medium text-[#0B1D3A]">ön sayfasının (yapı kullanma izin belgesi) okunaklı olması</strong> yeterlidir.
-        Çok sayfalı PDF yüklerseniz, iskan sayfasını önizlemeden kendiniz seçersiniz. Telefon fotoğrafı (JPG/PNG) da olur — net ve düz çekilmiş olsun.
+        İskan (yapı kullanma izin) belgelerinizi yükleyin. PDF veya net bir fotoğraf (JPG/PNG) yeterli; çok sayfalı PDF'te iskan sayfasını kendiniz seçersiniz.
       </p>
 
       {secimBekleyenPdf ? (
@@ -274,7 +275,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
         className={`block border-2 border-dashed rounded-lg p-8 text-center transition-all ${
           yukleniyor
             ? "blur-sm pointer-events-none select-none opacity-60 border-gray-300 bg-gray-50"
-            : `cursor-pointer ${dragOver ? "border-[#047857] bg-[#E1F5EE]" : "border-gray-300 bg-gray-50 hover:bg-gray-100"}`
+            : `cursor-pointer ${dragOver ? "border-[#0B1D3A] bg-[#F4F6FA]" : "border-gray-300 bg-gray-50 hover:bg-gray-100"}`
         }`}
       >
         <CloudUpload className="w-8 h-8 mx-auto text-[#5A6478]" />
@@ -299,7 +300,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
       {yukleniyor && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg bg-white/40">
           <div className="flex flex-col items-center gap-2.5 px-6 py-4 bg-white rounded-xl shadow-sm border border-[#E8E4DC]">
-            <Loader2 className="w-7 h-7 text-[#047857] animate-spin" />
+            <Loader2 className="w-7 h-7 text-[#C9952B] animate-spin" />
             <p className="text-sm font-medium text-[#0B1D3A]">Dosya işleniyor…</p>
             <p className="text-[11px] text-[#5A6478]">Belge okunuyor, lütfen bekleyiniz (10-30 sn)</p>
           </div>
@@ -311,13 +312,9 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
       {!secimBekleyenPdf && (
       <div className="mt-3 flex items-start gap-2.5 p-3 bg-amber-50 rounded-lg">
         <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0" />
-        <div className="text-xs text-amber-900 leading-relaxed">
-          <p className="font-medium mb-0.5">Belgelerin okunaklı olması önem arz etmektedir</p>
-          <p>
-            Taranmış belgelerin net çözünürlükte olması; fotoğraflarda ise yazıların eğilmeden, gölgesiz ve tüm
-            bilgilerin kadrajda olacak şekilde çekilmesi gerekmektedir.
-          </p>
-        </div>
+        <p className="text-xs text-amber-900 leading-relaxed">
+          Belge net, düz ve gölgesiz olmalı; tüm bilgiler kadrajda görünsün.
+        </p>
       </div>
       )}
 
@@ -387,14 +384,13 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
         <div className="mt-6 pt-5 border-t border-[#E8E4DC]">
           <h3 className="text-sm font-medium text-[#0B1D3A] mb-1.5">Çıkarılan bilgileri teyit ediniz</h3>
           <p className="text-xs text-[#5A6478] mb-3 leading-relaxed">
-            Hesaplama aşağıdaki verilere göre yapılacağından, doğruluk kontrolünün tarafınızca yapılması ve gerekli
-            düzeltmelerin uygulanması önem arz etmektedir. İş türü varsayılan olarak{" "}
-            <strong className="font-medium">kat karşılığı</strong> seçilmiştir.
+            Hesaplama bu verilere göre yapılır; kontrol edip gerekirse düzeltin. İş türü varsayılan olarak{" "}
+            <strong className="font-medium">kat karşılığı</strong> seçilidir.
           </p>
 
           {tekMuteahhit && (
             <div className="flex items-center gap-3 p-2.5 px-3.5 bg-gray-50 rounded-lg mb-3">
-              <div className="w-9 h-9 rounded-full bg-[#047857] text-white flex items-center justify-center font-medium text-sm flex-shrink-0">
+              <div className="w-9 h-9 rounded-full bg-[#0B1D3A] text-white flex items-center justify-center font-medium text-sm flex-shrink-0">
                 {muteahhitInitials(tekMuteahhit)}
               </div>
               <div className="flex-1 min-w-0">
@@ -464,7 +460,16 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                           />
                         </td>
                         <td className="px-2 py-2.5 font-medium">
-                          <EditCell value={is.sinif} onChange={(v) => updIs(is.id, { sinif: v })} className="font-medium" />
+                          <EditCell value={sinifNumerik(is.sinif)} onChange={(v) => updIs(is.id, { sinif: sinifRoman(v) })} className="font-medium" />
+                          {(() => {
+                            const gs = (is.yapiTipi === "konut" || is.yapiTipi === "ticari") && is.yapiYuksekligiM
+                              ? guncelSinifStr(is.yapiYuksekligiM, is.yapiTipi) : null;
+                            return gs && gs !== is.sinif ? (
+                              <p className="text-[9px] text-blue-700 mt-0.5" title="Yönetmelik değişikliği nedeniyle güncel sınıf farklı. Belge tutarı iskandaki sınıfla, güncelleme katsayısı bugünkü sınıfla hesaplanır.">
+                                güncel: {sinifNumerik(gs)}
+                              </p>
+                            ) : null;
+                          })()}
                         </td>
                         <td className="px-2 py-2.5 text-right">
                           <EditCell
@@ -496,6 +501,11 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
                             value={is.isTuru}
                             onChange={(v) => updIs(is.id, { isTuru: v })}
                           />
+                          {(is.isTuru === "taahhut" || is.isTuru === "kamu") && (
+                            <p className="text-[9px] text-[#5A6478] italic mt-0.5" title="Son 5/15 yıl filtresinde bu iş türünde geçici kabul tarihi esas alınır.">
+                              filtre: geçici kabul
+                            </p>
+                          )}
                         </td>
                         {!tekMuteahhit && (
                           <td className="px-2 py-2.5 text-[#5A6478]">
@@ -551,7 +561,7 @@ export function AdimBelgeler({ isler, setIsler, onIleri, mevcutCompanyId }: Prop
         <button
           onClick={onIleri}
           disabled={ileriDisabled}
-          className="px-5 py-2.5 bg-[#047857] hover:bg-[#065F46] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg"
+          className="px-5 py-2.5 bg-[#C9952B] hover:bg-[#B8862A] disabled:opacity-40 disabled:cursor-not-allowed text-[#0B1D3A] text-sm font-semibold rounded-lg transition-colors"
         >
           Devam et →
         </button>
@@ -577,7 +587,7 @@ function EditCell({
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`bg-transparent outline-none w-full focus:bg-white focus:px-1 focus:border focus:border-[#047857] rounded ${className}`}
+      className={`bg-transparent outline-none w-full focus:bg-white focus:px-1 focus:border focus:border-[#0B1D3A] rounded ${className}`}
     />
   );
 }
@@ -619,7 +629,7 @@ function EkBilgiForm({ is, onChange }: { is: Is; onChange: (p: Partial<Is>) => v
               onChange({ sozlesmeBedeli: parseFloat(e.target.value.replace(/[^\d]/g, "")) || undefined })
             }
             placeholder="örn. 8.500.000"
-            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#0B1D3A]"
           />
         </div>
         {is.isTuru === "kamu" && (
@@ -632,7 +642,7 @@ function EkBilgiForm({ is, onChange }: { is: Is; onChange: (p: Partial<Is>) => v
               value={is.ihaleIlanTarihi ?? ""}
               onChange={(e) => onChange({ ihaleIlanTarihi: e.target.value })}
               placeholder="gg.aa.yyyy"
-              className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+              className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#0B1D3A]"
             />
           </div>
         )}
@@ -645,7 +655,7 @@ function EkBilgiForm({ is, onChange }: { is: Is; onChange: (p: Partial<Is>) => v
             value={is.geciciKabulTarihi ?? ""}
             onChange={(e) => onChange({ geciciKabulTarihi: e.target.value })}
             placeholder="gg.aa.yyyy"
-            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#0B1D3A]"
           />
         </div>
         <div className="flex-1 min-w-[100px]">
@@ -659,7 +669,7 @@ function EkBilgiForm({ is, onChange }: { is: Is; onChange: (p: Partial<Is>) => v
             placeholder="100"
             min={0}
             max={100}
-            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#047857]"
+            className="w-full h-8 px-2 text-xs border border-[#E8E4DC] rounded outline-none focus:border-[#0B1D3A]"
           />
         </div>
       </div>

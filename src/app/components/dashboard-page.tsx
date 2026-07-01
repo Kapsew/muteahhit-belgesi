@@ -7,6 +7,8 @@ import {
   ArrowRight, RefreshCw, Trash2, Edit2, Save, Check, ExternalLink, ChevronDown, ChevronUp, Phone
 } from "lucide-react";
 import { useAuth } from "./auth-context";
+import { FIYAT_TL } from "./hizli-hesap/fiyat";
+import { sinifNumerik } from "./sinif-format";
 import { PdfViewer } from "./pdf-viewer";
 
 /* ─────────────────────────────────────────────────────────────
@@ -353,6 +355,14 @@ function TabAnaliz({ company, status, setActiveTab }: { company: Company; status
           </div>
         </div>
 
+        {status === "pending_payment" && setActiveTab && (
+          <button
+            onClick={() => setActiveTab("odeme")}
+            className="w-full flex items-center justify-center gap-2 bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] text-sm font-semibold py-3 rounded-xl transition-colors mb-4"
+          >
+            <CreditCard className="w-4 h-4" /> Ödemeye Git
+          </button>
+        )}
         {status === "wizard_incomplete" && (
           <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
@@ -493,15 +503,17 @@ function TabFirma({ company, onRefresh, status, setActiveTab }: { company: Compa
 
   /* ── Hesaplama Yaptır ── */
   const [hesapLoading, setHesapLoading] = useState(false);
+  const [hesapHata, setHesapHata] = useState<string | null>(null);
   const canRequestCalc = !locked && ["wizard_incomplete", "pending_payment", "report_published", "docs_complete", "application_submitted", "certificate_received"].includes(status || "");
   const expCount = (qual?.experiences || []).length;
   const hasChanges = expCount > 0 || !!diploma;
 
   const handleHesaplamaYaptir = async () => {
     setHesapLoading(true);
+    setHesapHata(null);
     try {
       const { supabase: sb, adminAddBilling, adminUpdateStatus } = await import("./supabase-client");
-      const fiyatlar: Record<string, number> = { bilgi_alma: 7000, sadece_hesaplama: 11000, hesaplama_basvuru: 20000, h_grubu: 12000 };
+      const fiyatlar: Record<string, number> = { bilgi_alma: 10000, sadece_hesaplama: 11000, hesaplama_basvuru: 20000, h_grubu: 12000 };
       const mevcutPaket = company.selectedService || "h_grubu";
       const yeniPaket = expCount > 0 ? (company.hizmetModeli === "biz_yapiyoruz" ? "hesaplama_basvuru" : "sadece_hesaplama") : "h_grubu";
       const labels: Record<string, string> = { bilgi_alma: "Bilgi Alma Danışmanlığı", sadece_hesaplama: "İş Deneyim Hesaplama", hesaplama_basvuru: "Tam Hizmet — Hesaplama & Başvuru", h_grubu: "H Grubu Başvuru" };
@@ -513,8 +525,12 @@ function TabFirma({ company, onRefresh, status, setActiveTab }: { company: Compa
       await sb.from("companies").update({ selected_service: yeniPaket, service_label: labels[yeniPaket], guncelleme: new Date().toISOString() }).eq("id", company.id);
       await adminUpdateStatus(company.id, "pending_payment", "Hesaplama talebi oluşturuldu", fark > 0 ? `Fark faturası: ${fark.toLocaleString("tr-TR")} ₺` : "Ek ücret yok");
       onRefresh?.();
-    } catch (e) { console.error(e); }
-    setHesapLoading(false);
+      setActiveTab?.("odeme");   // başarı → ödeme sekmesine götür (borç + ödeme yöntemleri orada)
+    } catch (e: any) {
+      setHesapHata(e?.message || "İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      setHesapLoading(false);
+    }
   };
 
   /* ── İş deneyimi verileri ── */
@@ -528,7 +544,7 @@ function TabFirma({ company, onRefresh, status, setActiveTab }: { company: Compa
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-[#0B1D3A] truncate">{exp.adaParsel || exp.ada_parsel || `${tl} ${idx + 1}`}</span>
-          {(exp.buildingClass || exp.yapiSinifi) && <span className="text-[10px] bg-[#C9952B]/10 text-[#C9952B] px-1.5 py-0.5 rounded font-bold">{exp.buildingClass || exp.yapiSinifi}</span>}
+          {(exp.buildingClass || exp.yapiSinifi) && <span className="text-[10px] bg-[#C9952B]/10 text-[#C9952B] px-1.5 py-0.5 rounded font-bold">{sinifNumerik(exp.buildingClass || exp.yapiSinifi)}</span>}
         </div>
         <div className="flex flex-wrap gap-x-3 text-[11px] text-[#5A6478] mt-0.5">
           {(exp.contractDate || exp.sozlesmeTarihi) && <span>Sözleşme: {exp.contractDate || exp.sozlesmeTarihi}</span>}
@@ -724,13 +740,20 @@ function TabFirma({ company, onRefresh, status, setActiveTab }: { company: Compa
         </button>
       )}
 
+      {hesapHata && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{hesapHata}</span>
+        </div>
+      )}
+
       {/* ═══ İş deneyimi modal ═══ */}
       {expModal !== null && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setExpModal(null)}>
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-[#0B1D3A] to-[#122A54] p-5 rounded-t-2xl flex items-center justify-between">
               <div>
-                <h3 className="text-white font-bold">{expModal?.id ? "İş Deneyimi Düzenle" : "Yeni İş Deneyimi Ekle"}</h3>
+                <h3 className="text-white text-lg" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>{expModal?.id ? "İş Deneyimi Düzenle" : "Yeni İş Deneyimi Ekle"}</h3>
                 <p className="text-white/40 text-xs mt-0.5">{expForm.isDeneyimiTipi === "taahhut" ? "Taahhüt işi" : "Kat karşılığı işi"}</p>
               </div>
               <button onClick={() => setExpModal(null)} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
@@ -760,7 +783,7 @@ function TabFirma({ company, onRefresh, status, setActiveTab }: { company: Compa
                     <div><label className="text-xs text-[#5A6478] block mb-1.5 font-medium">Yapı yüksekliği (m)</label><input value={expForm.yapiYuksekligiM} onChange={e => setExpForm(f => ({ ...f, yapiYuksekligiM: e.target.value }))} className="w-full px-3 py-2.5 border border-[#E8E4DC] rounded-xl text-sm focus:border-[#C9952B] focus:outline-none" /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><label className="text-xs text-[#5A6478] block mb-1.5 font-medium">Yapı sınıfı *</label><select value={expForm.yapiSinifi} onChange={e => setExpForm(f => ({ ...f, yapiSinifi: e.target.value }))} className="w-full px-3 py-2.5 border border-[#E8E4DC] rounded-xl text-sm focus:border-[#C9952B] focus:outline-none bg-white">{["III.B","III.C","IV.A","IV.B","IV.C","V.A","V.B","V.C","V.D","V.E"].map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                    <div><label className="text-xs text-[#5A6478] block mb-1.5 font-medium">Yapı sınıfı *</label><select value={expForm.yapiSinifi} onChange={e => setExpForm(f => ({ ...f, yapiSinifi: e.target.value }))} className="w-full px-3 py-2.5 border border-[#E8E4DC] rounded-xl text-sm focus:border-[#C9952B] focus:outline-none bg-white">{["III.B","III.C","IV.A","IV.B","IV.C","V.A","V.B","V.C","V.D","V.E"].map(s => <option key={s} value={s}>{sinifNumerik(s)}</option>)}</select></div>
                     <div><label className="text-xs text-[#5A6478] block mb-1.5 font-medium">Yapı tipi</label><select value={expForm.yapiTipi} onChange={e => setExpForm(f => ({ ...f, yapiTipi: e.target.value }))} className="w-full px-3 py-2.5 border border-[#E8E4DC] rounded-xl text-sm focus:border-[#C9952B] focus:outline-none bg-white">{[["konut","Konut"],["konut_ticari","Konut+Ticari"],["ticari","Ticari"],["sanayi","Sanayi"],["otel","Otel"],["hastane","Hastane"],["avm","AVM"],["diger","Diğer"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
                   </div>
                   {/* Arsa sahibi / müteahhit aynı */}
@@ -793,7 +816,7 @@ function TabFirma({ company, onRefresh, status, setActiveTab }: { company: Compa
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDipModal(false)}>
           <div className="bg-white rounded-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-[#0B1D3A] to-[#122A54] p-5 rounded-t-2xl flex items-center justify-between">
-              <h3 className="text-white font-bold">{diploma ? "Diploma Düzenle" : "Diploma Ekle"}</h3>
+              <h3 className="text-white text-lg" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>{diploma ? "Diploma Düzenle" : "Diploma Ekle"}</h3>
               <button onClick={() => setDipModal(false)} className="text-white/60 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -937,10 +960,20 @@ function TabMali({ company, onStatusChange }: { company: Company; onStatusChange
 }
 
 /* ── ÖDEME SEKMESİ ── */
-function TabOdeme({ company, invoices }: { company: Company; invoices: Invoice[] }) {
+function TabOdeme({ company, invoices, status }: { company: Company; invoices: Invoice[]; status: AppStatus }) {
   const tlFmt = (n: number) => n.toLocaleString("tr-TR") + " ₺";
-  const totalPaid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + (i.amountNum || 0), 0);
-  const totalPending = invoices.filter(i => i.status !== "paid").reduce((s, i) => s + (i.amountNum || 0), 0);
+
+  // Akış firmayı "pending_payment" olarak açar ama rapor ücreti için fatura oluşturmaz.
+  // Fatura yoksa ve ödeme bekleniyorsa → rapor ücretini bekleyen borç olarak göster.
+  const acikFaturaVar = invoices.some(i => i.status !== "paid");
+  const raporUcretiBekliyor = status === "pending_payment" && !acikFaturaVar;
+  const sanalFaturalar: any[] = raporUcretiBekliyor
+    ? [{ id: "rapor-ucreti", description: "Yeterlilik Analiz Raporu", amount: tlFmt(FIYAT_TL), amountNum: FIYAT_TL, status: "unpaid", date: "", dueDate: "" }]
+    : [];
+  const tumFaturalar: any[] = [...invoices, ...sanalFaturalar];
+
+  const totalPaid    = tumFaturalar.filter(i => i.status === "paid").reduce((s, i) => s + (i.amountNum || 0), 0);
+  const totalPending = tumFaturalar.filter(i => i.status !== "paid").reduce((s, i) => s + (i.amountNum || 0), 0);
 
   const statusMap: Record<string, { label: string; cls: string }> = {
     paid:    { label: "Ödendi",       cls: "bg-green-50 text-green-700 border-green-200" },
@@ -963,7 +996,7 @@ function TabOdeme({ company, invoices }: { company: Company; invoices: Invoice[]
       </div>
 
       {/* Fatura listesi */}
-      {invoices.length === 0 ? (
+      {tumFaturalar.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center">
           <CreditCard className="w-10 h-10 text-[#E8E4DC] mx-auto mb-3" />
           <p className="text-sm text-[#5A6478]">Henüz fatura bulunmuyor.</p>
@@ -974,7 +1007,7 @@ function TabOdeme({ company, invoices }: { company: Company; invoices: Invoice[]
             <h3 className="text-sm font-semibold text-[#0B1D3A]">Faturalar</h3>
           </div>
           <div className="divide-y divide-[#F0EDE8]">
-            {invoices.map(inv => (
+            {tumFaturalar.map(inv => (
               <div key={inv.id} className="px-5 py-4 flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#0B1D3A]">{inv.description}</p>
@@ -1561,7 +1594,7 @@ function TabRapor({ status, company, sonRapor }: { status: AppStatus; company: C
 
                   {/* Detay satırı */}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#5A6478]">
-                    {(is.ruhsatSinifi || is.yapiSinifi || is.yapi_sinifi) && <span>Sınıf: {is.ymoSinifi || is.ruhsatSinifi || is.yapiSinifi || is.yapi_sinifi}</span>}
+                    {(is.ruhsatSinifi || is.yapiSinifi || is.yapi_sinifi) && <span>Sınıf: {sinifNumerik(is.ymoSinifi || is.ruhsatSinifi || is.yapiSinifi || is.yapi_sinifi)}</span>}
                     {(is.insaatAlaniM2 || is.insaat_alani_m2) && <span>Alan: {is.insaatAlaniM2 || is.insaat_alani_m2} m²</span>}
                     {(is.sozlesmeTarihi || is.sozlesme_tarihi) && <span>Sözleşme: {is.sozlesmeTarihi || is.sozlesme_tarihi}</span>}
                     {(is.iskanTarihi || is.iskan_tarihi) && <span>İskan: {is.iskanTarihi || is.iskan_tarihi}</span>}
@@ -1651,7 +1684,7 @@ function TabBelge({ company, navigate, sonRapor }: { company: Company; navigate:
           </div>
           <div className="flex items-center gap-2 mb-4">
             {belge.grup && <span className="bg-[#C9952B] text-[#0B1D3A] text-sm font-bold px-3 py-1 rounded-lg">Grup {belge.grup}</span>}
-            {belge.sinif && <span className="bg-white/10 text-white text-xs px-3 py-1 rounded-lg">{belge.sinif}</span>}
+            {belge.sinif && <span className="bg-white/10 text-white text-xs px-3 py-1 rounded-lg">{sinifNumerik(belge.sinif)}</span>}
           </div>
           <div className="bg-white/8 rounded-xl p-4">
             <p className="text-xs text-white/50 mb-1">Belge Numarası</p>
@@ -1997,8 +2030,9 @@ export function DashboardPage() {
         {company && (
           <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <h1 className="text-xl font-bold text-[#0B1D3A]">{company.companyName}</h1>
-              <p className="text-sm text-[#5A6478] mt-0.5">
+              <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-1">Firma paneli</div>
+              <h1 className="text-[#0B1D3A] text-2xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>{company.companyName}</h1>
+              <p className="text-sm text-[#5A6478] mt-1">
                 {company.serviceLabel || "Müteahhitlik belgesi başvurusu"}
                 {company.location === "istanbul" && " · İstanbul"}
               </p>
@@ -2054,7 +2088,7 @@ export function DashboardPage() {
           {activeTab === "analiz"   && company && <TabAnaliz   company={company} status={status} setActiveTab={setActiveTab} />}
           {activeTab === "firma"    && company && <TabFirma    company={company} onRefresh={refresh} status={status} setActiveTab={setActiveTab} />}
           {activeTab === "mali"     && company && <TabMali     company={company} onStatusChange={refresh} />}
-          {activeTab === "odeme"    && company && <TabOdeme    company={company} invoices={invoices} />}
+          {activeTab === "odeme"    && company && <TabOdeme    company={company} invoices={invoices} status={status} />}
           {activeTab === "rapor"    && company && <TabRapor    status={status} company={company} sonRapor={sonRapor} />}
           {activeTab === "evraklar" && company && <TabEvraklar company={company} hizmetModeli={hizmetModeli} status={status} dbDocs={dbDocuments} onViewPdf={(url, name) => setPdfViewer({ url, name })} sonRapor={sonRapor} />}
           {activeTab === "basvuru"  && company && <TabBasvuru  company={company} hizmetModeli={hizmetModeli} process={process} />}

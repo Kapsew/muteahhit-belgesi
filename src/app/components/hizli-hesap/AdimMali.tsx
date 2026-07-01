@@ -21,7 +21,8 @@ export function AdimMali({ dosya, setDosya, onGeri, onIleri }: Props) {
 
   return (
     <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6">
-      <h2 className="text-lg font-medium text-[#0B1D3A] mb-1">Mali yeterlilik (opsiyonel)</h2>
+      <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2">Adım 2 · Opsiyonel</div>
+      <h2 className="text-[#0B1D3A] text-xl mb-1.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Mali yeterlilik</h2>
       <p className="text-sm text-[#5A6478] mb-4 leading-relaxed">
         <strong className="font-medium text-[#0B1D3A]">F1 ve üzeri gruplar</strong> için mali yeterlilik koşulu aranmaktadır.
         2025 yılına ait kurumlar vergisi beyannamesinin yüklenmesi halinde mali yeterlilik incelemesi analiz raporuna
@@ -36,7 +37,7 @@ export function AdimMali({ dosya, setDosya, onGeri, onIleri }: Props) {
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         className={`block border-2 border-dashed rounded-lg p-7 text-center cursor-pointer transition-colors ${
-          dragOver ? "border-[#047857] bg-[#E1F5EE]" : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+          dragOver ? "border-[#0B1D3A] bg-[#F4F6FA]" : "border-gray-300 bg-gray-50 hover:bg-gray-100"
         }`}
       >
         <FileUp className="w-8 h-8 mx-auto text-[#5A6478]" />
@@ -74,7 +75,7 @@ export function AdimMali({ dosya, setDosya, onGeri, onIleri }: Props) {
           </button>
           <button
             onClick={onIleri}
-            className="px-5 py-2.5 bg-[#047857] hover:bg-[#065F46] text-white text-sm font-medium rounded-lg flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
           >
             Devam et <ArrowRight className="w-4 h-4" />
           </button>

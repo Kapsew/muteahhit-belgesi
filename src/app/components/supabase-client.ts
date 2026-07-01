@@ -465,7 +465,9 @@ export async function adminUpdateStatus(
   const { error: timelineError } = await supabase
     .from("status_timeline")
     .insert({ company_id: companyId, status: newStatus, status_label: statusLabel, note: note || null });
-  if (timelineError) throw timelineError;
+  // Timeline yalnızca ikincil bir gecmis kaydidir. RLS/izin nedeniyle basarisiz olsa bile
+  // asil durum guncellemesini (companies) engellememeli. (Musteri panelinden cagrilabilir.)
+  if (timelineError) console.warn("status_timeline kaydi eklenemedi:", timelineError.message);
 }
 
 // ================================================================

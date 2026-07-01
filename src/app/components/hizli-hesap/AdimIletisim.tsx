@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, Clock, Info } from "lucide-react";
 import type { OturumDurumu } from "./types";
+import { FIYAT, KDV_NOTU } from "./fiyat";
 
 interface Props {
   iletisim: OturumDurumu["iletisim"];
@@ -24,9 +25,10 @@ export function AdimIletisim({ iletisim, setIletisim, onGeri, onOde, gonderiliyo
 
   return (
     <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6">
-      <h2 className="text-lg font-medium text-[#0B1D3A] mb-1">İletişim bilgileri ve hesap</h2>
+      <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2">Son adım</div>
+      <h2 className="text-[#0B1D3A] text-xl mb-1.5" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>İletişim bilgileri ve hesap</h2>
       <p className="text-sm text-[#5A6478] mb-4 leading-relaxed">
-        Analiz raporunun iletilmesi ve hesabınızın oluşturulması için aşağıdaki bilgileri eksiksiz doldurunuz.
+        Rapor ve hesabınızın oluşturulması için bilgilerinizi girin.
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -95,13 +97,13 @@ export function AdimIletisim({ iletisim, setIletisim, onGeri, onOde, gonderiliyo
         <div className="flex justify-between items-center pb-3 border-b border-[#E8E4DC]">
           <div>
             <p className="text-xs text-[#5A6478]">Yeterlilik analiz raporu</p>
-            <p className="text-xl font-medium text-[#0B1D3A]">1.499 ₺</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">belirtilen fiyata KDV dahildir</p>
+            <p className="text-xl font-medium text-[#0B1D3A]">{FIYAT}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{KDV_NOTU}</p>
           </div>
           <button
             onClick={onOde}
             disabled={!valid || gonderiliyor}
-            className="px-5 py-2.5 bg-[#047857] hover:bg-[#065F46] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-[#C9952B] hover:bg-[#B8862A] disabled:opacity-40 disabled:cursor-not-allowed text-[#0B1D3A] text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
           >
             {gonderiliyor ? "İşleniyor…" : <>Hesapla ve devam et <ArrowRight className="w-4 h-4" /></>}
           </button>
@@ -110,19 +112,13 @@ export function AdimIletisim({ iletisim, setIletisim, onGeri, onOde, gonderiliyo
           <div className="flex items-start gap-2.5 text-[11px] text-[#5A6478] leading-relaxed">
             <Clock className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
             <span>
-              Analiz raporu, uzmanlarımız tarafından gerçekleştirilen inceleme sonrasında{" "}
-              <strong className="font-medium text-[#0B1D3A]">en geç 2 iş günü</strong> içerisinde tarafınıza PDF formatında
-              iletilecektir.
+              Rapor, inceleme sonrası <strong className="font-medium text-[#0B1D3A]">en geç 2 iş günü</strong> içinde PDF olarak iletilir.
             </span>
           </div>
           <div className="flex items-start gap-2.5 text-[11px] text-[#5A6478] leading-relaxed">
             <Info className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
             <span>
-              İşbu hizmet bir başvuru hizmeti niteliği taşımamakta olup;{" "}
-              <strong className="font-medium text-[#0B1D3A]">
-                müteahhitlik yetki belge grubunun doğru tespitine yönelik analiz çalışması
-              </strong>{" "}
-              kapsamındadır. Bakanlık başvuru harçları ve benzeri resmi ödemeler hizmet bedeline dahil değildir.
+              Bu hizmet bir başvuru değil, <strong className="font-medium text-[#0B1D3A]">doğru belge grubunun tespitine yönelik analizdir.</strong> Bakanlık harç ve resmi ödemeleri fiyata dahil değildir.
             </span>
           </div>
         </div>
@@ -168,7 +164,7 @@ function Input({
       type={type}
       placeholder={placeholder}
       maxLength={maxLength}
-      className="w-full h-9 px-3 text-sm border border-[#E8E4DC] rounded-lg outline-none focus:border-[#047857]"
+      className="w-full h-9 px-3 text-sm border border-[#E8E4DC] rounded-lg outline-none focus:border-[#0B1D3A]"
     />
   );
 }

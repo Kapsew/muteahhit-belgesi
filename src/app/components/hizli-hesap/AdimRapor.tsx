@@ -11,6 +11,7 @@ import { useNavigate } from "react-router";
 import { Lock, CheckCircle2, FileText, TrendingUp, AlertCircle, ShieldCheck, Eye, LayoutDashboard, Home, ArrowRight } from "lucide-react";
 import type { TamHesaplama, HesaplananIs } from "../hesaplama-motor";
 import { testOdemeTamamla } from "./kayit";
+import { FIYAT, KDV_KISA } from "./fiyat";
 
 interface Props {
   hesap: TamHesaplama;
@@ -21,8 +22,6 @@ interface Props {
 function tl(n: number): string {
   return (n || 0).toLocaleString("tr-TR") + " ₺";
 }
-
-const FIYAT = "1.499 ₺";
 
 export function AdimRapor({ hesap, companyId, firmaUnvani }: Props) {
   const navigate = useNavigate();
@@ -49,10 +48,11 @@ export function AdimRapor({ hesap, companyId, firmaUnvani }: Props) {
     <div className="space-y-4">
       {/* Sonuç başlığı — her zaman görünür */}
       <div className="bg-white border border-[#E8E4DC] rounded-2xl p-6 text-center">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#047857]/10 text-[#047857] flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#C9952B]/10 text-[#C9952B] flex items-center justify-center">
           <CheckCircle2 className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-semibold text-[#0B1D3A]">Analiziniz hazır</h2>
+        <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-1.5">Analiz sonucu</div>
+        <h2 className="text-[#0B1D3A] text-2xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Analiziniz hazır</h2>
         <p className="text-sm text-[#5A6478] mt-1">{firmaUnvani}</p>
         <div className="mt-4 inline-block px-8 py-4 rounded-xl bg-[#0B1D3A] text-white">
           <span className="text-xs opacity-70 block mb-0.5">Hesaplanan yetki grubu</span>
@@ -82,8 +82,8 @@ export function AdimRapor({ hesap, companyId, firmaUnvani }: Props) {
         // ── Ödeme sonrası: gerçek rapor ──
         <>
           <DetayIcerik hesap={hesap} />
-          <div className="bg-[#E1F5EE] border border-[#047857]/20 rounded-xl p-4 flex items-start gap-2.5">
-            <CheckCircle2 className="w-5 h-5 text-[#047857] flex-shrink-0 mt-0.5" />
+          <div className="bg-[#FAF6EE] border border-[#C9952B]/25 rounded-xl p-4 flex items-start gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-[#C9952B] flex-shrink-0 mt-0.5" />
             <p className="text-sm text-[#0B1D3A]">
               Ödemeniz alındı. Raporunuza panelinizden de erişebilirsiniz. Uzman incelemesi
               sonrası onaylı PDF rapor en geç 2 iş günü içinde iletilecektir.
@@ -176,7 +176,7 @@ function PaywallKart({
           <div className="flex items-baseline gap-1.5 mt-1 mb-1">
             <span className="text-3xl font-bold text-[#C9952B]">{FIYAT}</span>
           </div>
-          <p className="text-[11px] text-white/50 mb-5">KDV dahildir · Tek seferlik</p>
+          <p className="text-[11px] text-white/50 mb-5">{KDV_KISA} · Tek seferlik</p>
 
           <ul className="space-y-2.5 mb-5">
             {["Tam yeterlilik raporu", "İş bazlı tutar dökümü", "Uzman kontrollü onaylı PDF", "Panelden sınırsız erişim"].map((m, i) => (
@@ -217,13 +217,13 @@ function DetayIcerik({ hesap }: { hesap: TamHesaplama }) {
           <TrendingUp className="w-4 h-4 text-[#C9952B]" /> Yöntem Karşılaştırması
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <div className={`p-3 rounded-lg border ${hesap.tercihEdilenYontem === "son5" ? "border-[#047857] bg-[#047857]/5" : "border-[#E8E4DC]"}`}>
+          <div className={`p-3 rounded-lg border ${hesap.tercihEdilenYontem === "son5" ? "border-[#0B1D3A] bg-[#0B1D3A]/5" : "border-[#E8E4DC]"}`}>
             <p className="text-xs text-[#5A6478]">Son 5 Yıl (Y1)</p>
             <p className="text-lg font-semibold text-[#0B1D3A]">{hesap.y1.grup}</p>
             <p className="text-xs text-[#5A6478] mt-1">Net: {tl(hesap.y1.toplamNet)}</p>
             <p className="text-[11px] text-gray-400">Brüt: {tl(hesap.y1.toplamBrut)}</p>
           </div>
-          <div className={`p-3 rounded-lg border ${hesap.tercihEdilenYontem === "son15" ? "border-[#047857] bg-[#047857]/5" : "border-[#E8E4DC]"}`}>
+          <div className={`p-3 rounded-lg border ${hesap.tercihEdilenYontem === "son15" ? "border-[#0B1D3A] bg-[#0B1D3A]/5" : "border-[#E8E4DC]"}`}>
             <p className="text-xs text-[#5A6478]">Son 15 Yıl (Y2)</p>
             <p className="text-lg font-semibold text-[#0B1D3A]">{hesap.y2.grup}</p>
             <p className="text-xs text-[#5A6478] mt-1">Toplam: {tl(hesap.y2.toplam)}</p>

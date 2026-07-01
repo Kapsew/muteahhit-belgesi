@@ -17,3 +17,5 @@ dist
 .silinen-yedek/
 .vercel
 .env*
+
+.yedek-*/

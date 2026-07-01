@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Shield, CheckCircle, ArrowRight, Award, Calculator, Users, Building2, MapPin, FileText, Scale, ChevronDown, ChevronUp, Phone, BookOpen, Gavel, Star, Zap, Lock, RefreshCw, Clock, X, Loader2, Mail, Eye, EyeOff, User } from "lucide-react";
 import { useAuth } from "./auth-context";
+import { FIYAT, KDV_NOTU } from "./hizli-hesap/fiyat";
 
 
 /* ── Referans Verileri ── */
@@ -343,10 +344,10 @@ export function LandingPage() {
           <div className="bg-white rounded-2xl border border-[#EFEAE0] p-8 text-center relative shadow-sm" style={{ borderTop: "3px solid #C9952B" }}>
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C9952B] text-[#0B1D3A] text-xs px-4 py-1 rounded-full font-medium">Tek Seferlik Ödeme</div>
             <div className="mt-2 mb-1">
-              <span className="text-4xl text-[#0B1D3A]">7.000 ₺</span>
+              <span className="text-4xl text-[#0B1D3A]">{FIYAT}</span>
               <span className="text-[#5A6478] text-base">'den başlayan fiyatlarla</span>
             </div>
-            <p className="text-[#5A6478] text-sm mb-8">Tüm fiyatlara KDV dahildir</p>
+            <p className="text-[#5A6478] text-sm mb-8">{KDV_NOTU}</p>
             <ul className="text-left text-sm space-y-3 mb-8">
               {[
                 "Sınıf tayini",
