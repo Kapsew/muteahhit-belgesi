@@ -209,14 +209,15 @@ export function LandingPage() {
               <Shield className="w-4 h-4" />
               2026 Güncel Mevzuat Uyumluluğu
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl text-white leading-tight mb-6">Müteahhitlik Belgesi Başvurunuzu<br /><span className="text-[#C9952B]">Profesyonel Ekiple</span> Tamamlayın</h1>
-            <p className="text-white/70 text-lg mb-10 max-w-lg"><span className="font-bold">Bakanlık süreçleri ve evrak trafiğiyle boğuşmayın.</span> Uzman analizimle hatalı harç ödemelerini engelleyelim, başvurunuzu yasal mevzuata tam uyumlu şekilde sonuçlandıralım.</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl text-white leading-tight mb-6">Müteahhitlik Belgesi <span className="text-[#C9952B]">Yeterlilik Analiziniz</span><br />Bakanlık Formülleriyle, Eksiksiz</h1>
+            <p className="text-white/70 text-lg mb-8 max-w-lg">İskan belgenizi yükleyin; hangi yetki grubuna (B, C, D…) hak kazandığınızı Bakanlık'ın resmi hesaplama yöntemiyle raporlayalım.</p>
             <button
               onClick={() => navigate(user ? "/dashboard" : "/hizli-hesap")}
               className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-10 py-4 rounded-xl text-base flex items-center justify-center gap-2 transition-colors"
             >
               {user ? "Panelime Git" : "Analize Başla"} <ArrowRight className="w-5 h-5" />
             </button>
+            <p className="text-white/50 text-sm mt-4">Bakanlık 2026 birim maliyet ve Yİ-ÜFE tablolarıyla · Uzman kontrollü</p>
           </div>
         </div>
       </section>
@@ -269,17 +270,17 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-2xl md:text-3xl text-[#0B1D3A] mb-3">Nasıl Çalışır?</h2>
-            <p className="text-[#5A6478]">4 adımda yetki belgenize kavuşun.</p>
+            <p className="text-[#5A6478]">4 adımda yeterlilik raporunuza ulaşın.</p>
           </div>
           <div className="max-w-3xl mx-auto relative">
             {/* vertical line */}
             <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-[#C9952B]/20 hidden sm:block" />
             <div className="space-y-8">
               {[
-                { num: "1", title: "Bilgilerinizi Girin", desc: "Şirket türü, ortaklık bilgileri ve iş deneyim verilerinizi kısa formla paylaşın.", icon: FileText },
-                { num: "2", title: "Sınıf Tayini & Analiz", desc: "Yetki belgesi grubunuz ve gerekli belgeler belirlenir.", icon: Calculator },
-                { num: "3", title: "Hizmet Seçimi", desc: "Size uygun hizmet paketini seçin, net fiyat bilgisini görün.", icon: Award },
-                { num: "4", title: "Profesyonel Destek", desc: "Danışman ekibimiz başvuru sürecinizin her aşamasında yanınızda.", icon: Users },
+                { num: "1", title: "İskan Belgenizi Yükleyin", desc: "Yapı kullanma izin belgenizi (iskan) yükleyin. Sistem belgeyi otomatik okur; tarihleri, alanı ve sınıfı sizin için çıkarır.", icon: FileText },
+                { num: "2", title: "Otomatik Analiz", desc: "Bakanlık'ın 2026 birim maliyet ve Yİ-ÜFE tablolarıyla belge tutarınız, güncel değeriniz ve yetki grubunuz hesaplanır.", icon: Calculator },
+                { num: "3", title: "Raporunuzu Görün", desc: "Hangi gruba (B, C, D…) hak kazandığınızı, iş bazlı tutarları ve mali yeterlilik durumunuzu tek raporda görün.", icon: Award },
+                { num: "4", title: "İndirin & Kullanın", desc: "Raporunuzu açın, detaylı analizi indirin; başvurunuzda güvenle kullanın.", icon: Users },
               ].map((s) => (
                 <div key={s.num} className="flex items-start gap-5 sm:gap-7">
                   <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#0B1D3A] flex items-center justify-center shrink-0 relative z-10">

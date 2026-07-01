@@ -477,12 +477,18 @@ export function LandingPage() {
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-white mb-4 text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Yetki belgenizi almaya hazır mısınız?</h2>
           <p className="text-white/60 mb-8">Sınıf tayini analizinizi başlatın, profesyonel ekibimizle başvurunuzu tamamlayın.</p>
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => navigate("/hizli-hesap")}
               className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-10 py-4 rounded-xl text-base inline-flex items-center gap-2 transition-colors"
             >
               Analize Başla <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigate("/hizli-hesap")}
+              className="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-8 py-4 rounded-xl text-base inline-flex items-center gap-2 transition-colors"
+            >
+              Ücretsiz Analiz Talebi
             </button>
           </div>
         </div>

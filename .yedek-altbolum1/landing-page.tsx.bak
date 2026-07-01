@@ -275,53 +275,61 @@ export function LandingPage() {
       </section>
 
       {/* Value Props — Hız, Güvenlik, Güncellik */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-12">
-          <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2.5">Neden Biz</div>
-          <h2 className="text-[#0B1D3A] mb-2.5 text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Süreci şansa bırakmayın</h2>
-          <p className="text-[#6B7280] max-w-md mx-auto">Profesyonel analiz ve eksiksiz dosya yönetimiyle başvurunuzu güvenceye alın.</p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-14">
+          <h2 className="text-2xl md:text-3xl text-[#0B1D3A] mb-3">Neden Biz?</h2>
+          <p className="text-[#5A6478] max-w-xl mx-auto">Müteahhitlik belgesi sürecinizi riske atmayın; profesyonel analiz ve eksiksiz dosya yönetimiyle işinizi şansa bırakmayın.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          {[
-            { icon: Zap, title: "Hızlı süreç", desc: "Analiziniz saniyeler içinde başlar, her dosya uzman ekibimizce kontrol edilir." },
-            { icon: Lock, title: "Güvenli veri", desc: "Şirket ve kişisel bilgileriniz korunur, üçüncü taraflarla paylaşılmaz." },
-            { icon: RefreshCw, title: "Güncel mevzuat", desc: "Yönetmelik ve harç tarifeleri sürekli takip edilir; başvurunuz her zaman uygun olur." },
-          ].map((v) => (
-            <div key={v.title} className="border border-[#EFEAE0] rounded-xl p-6 border-t-2 border-t-[#C9952B] hover:shadow-md transition-shadow bg-white">
-              <div className="w-10 h-10 rounded-[10px] bg-[#FAF6EE] flex items-center justify-center text-[#C9952B] mb-3.5">
-                <v.icon className="w-5 h-5" />
-              </div>
-              <h3 className="text-[#0B1D3A] text-base font-medium mb-1.5">{v.title}</h3>
-              <p className="text-[#6B7280] text-sm leading-relaxed">{v.desc}</p>
+        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl p-8 border border-[#0B1D3A]/8 text-center hover:shadow-lg transition-shadow">
+            <div className="w-14 h-14 rounded-2xl bg-[#C9952B]/10 flex items-center justify-center mx-auto mb-5">
+              <Zap className="w-7 h-7 text-[#C9952B]" />
             </div>
-          ))}
+            <h3 className="text-lg text-[#0B1D3A] mb-2">Hızlı Süreç</h3>
+            <p className="text-[#5A6478] text-sm">Başvuru süreciniz hızla başlatılır, her dosya uzman ekibimiz tarafından titizlikle kontrol edilir.</p>
+          </div>
+          <div className="bg-white rounded-2xl p-8 border border-[#0B1D3A]/8 text-center hover:shadow-lg transition-shadow">
+            <div className="w-14 h-14 rounded-2xl bg-[#C9952B]/10 flex items-center justify-center mx-auto mb-5">
+              <Lock className="w-7 h-7 text-[#C9952B]" />
+            </div>
+            <h3 className="text-lg text-[#0B1D3A] mb-2">Güvenli Veri Yönetimi</h3>
+            <p className="text-[#5A6478] text-sm">Şirket ve kişisel bilgileriniz güvenli altyapımızda korunur, üçüncü taraflarla paylaşılmaz.</p>
+          </div>
+          <div className="bg-white rounded-2xl p-8 border border-[#0B1D3A]/8 text-center hover:shadow-lg transition-shadow">
+            <div className="w-14 h-14 rounded-2xl bg-[#C9952B]/10 flex items-center justify-center mx-auto mb-5">
+              <RefreshCw className="w-7 h-7 text-[#C9952B]" />
+            </div>
+            <h3 className="text-lg text-[#0B1D3A] mb-2">Güncel Mevzuat</h3>
+            <p className="text-[#5A6478] text-sm">Yönetmelik ve harç tarifeleri sürekli takip edilir. Başvurunuz her zaman güncel kurallara uygun olur.</p>
+          </div>
         </div>
       </section>
 
       {/* How It Works — Timeline */}
-      <section className="bg-[#FBFAF7] py-20 border-y border-[#EFEAE0]" id="nasil">
+      <section className="bg-[#F0EDE8] py-20" id="nasil">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2.5">Nasıl Çalışır</div>
-            <h2 className="text-[#0B1D3A] text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>4 adımda raporunuza ulaşın</h2>
+          <div className="text-center mb-14">
+            <h2 className="text-2xl md:text-3xl text-[#0B1D3A] mb-3">Nasıl Çalışır?</h2>
+            <p className="text-[#5A6478]">4 adımda yeterlilik raporunuza ulaşın.</p>
           </div>
-          <div className="max-w-xl mx-auto relative">
+          <div className="max-w-3xl mx-auto relative">
             {/* vertical line */}
-            <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-[#EFEAE0]" />
-            <div className="space-y-3.5">
+            <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-[#C9952B]/20 hidden sm:block" />
+            <div className="space-y-8">
               {[
-                { num: "1", title: "İskan belgenizi yükleyin", desc: "Sistem belgeyi otomatik okur; tarih, alan ve sınıfı çıkarır.", son: false },
-                { num: "2", title: "Otomatik analiz", desc: "Bakanlık birim maliyet ve Yİ-ÜFE tablolarıyla değeriniz hesaplanır.", son: false },
-                { num: "3", title: "Raporunuzu görün", desc: "Yetki grubunuzu, iş bazlı tutarları ve mali yeterliliğinizi tek raporda görün.", son: false },
-                { num: "4", title: "İndirin ve kullanın", desc: "Detaylı analizi indirin, başvurunuzda güvenle kullanın.", son: true },
-              ].map((st) => (
-                <div key={st.num} className="flex items-start gap-[18px] relative">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 relative z-10 text-[15px] font-medium ${st.son ? "bg-[#C9952B] text-[#0B1D3A]" : "bg-[#0B1D3A] text-[#C9952B]"}`}>
-                    {st.num}
+                { num: "1", title: "İskan Belgenizi Yükleyin", desc: "Yapı kullanma izin belgenizi (iskan) yükleyin. Sistem belgeyi otomatik okur; tarihleri, alanı ve sınıfı sizin için çıkarır.", icon: FileText },
+                { num: "2", title: "Otomatik Analiz", desc: "Bakanlık'ın 2026 birim maliyet ve Yİ-ÜFE tablolarıyla belge tutarınız, güncel değeriniz ve yetki grubunuz hesaplanır.", icon: Calculator },
+                { num: "3", title: "Raporunuzu Görün", desc: "Hangi gruba (B, C, D…) hak kazandığınızı, iş bazlı tutarları ve mali yeterlilik durumunuzu tek raporda görün.", icon: Award },
+                { num: "4", title: "İndirin & Kullanın", desc: "Raporunuzu açın, detaylı analizi indirin; başvurunuzda güvenle kullanın.", icon: Users },
+              ].map((s) => (
+                <div key={s.num} className="flex items-start gap-5 sm:gap-7">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#0B1D3A] flex items-center justify-center shrink-0 relative z-10">
+                    <s.icon className="w-5 h-5 md:w-6 md:h-6 text-[#C9952B]" />
                   </div>
-                  <div className="bg-white rounded-xl px-4 py-3.5 flex-1 border border-[#EFEAE0]">
-                    <h4 className="text-[#0B1D3A] text-[15px] font-medium mb-0.5">{st.title}</h4>
-                    <p className="text-[#6B7280] text-[13px] leading-snug">{st.desc}</p>
+                  <div className="bg-white rounded-xl p-5 flex-1 border border-[#0B1D3A]/5">
+                    <div className="text-xs text-[#C9952B] mb-1">Adım {s.num}</div>
+                    <h4 className="text-[#0B1D3A] mb-1">{s.title}</h4>
+                    <p className="text-[#5A6478] text-sm">{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -333,15 +341,14 @@ export function LandingPage() {
       {/* Pricing */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20" id="fiyat">
         <div className="text-center mb-4">
-          <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2.5">Fiyatlandırma</div>
-          <h2 className="text-[#0B1D3A] mb-2.5 text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Tek seferlik hizmet bedeli</h2>
-          <p className="text-[#6B7280] max-w-xl mx-auto">Şahıs şirketleri, limited şirketler ve kooperatifler için.</p>
+          <h2 className="text-2xl md:text-3xl text-[#0B1D3A] mb-3">Fiyatlandırma</h2>
+          <p className="text-[#5A6478] max-w-xl mx-auto">Şahıs şirketleri, limited şirketler ve kooperatifler için tek seferlik hizmet bedeli.</p>
         </div>
-        <p className="text-center text-xs text-[#8A93A6] mb-12">Harçlar dahil değildir. Harç tutarları bakanlık tarifesine göre ayrıca tahsil edilir.</p>
+        <p className="text-center text-xs text-[#5A6478] mb-12">Harçlar dahil değildir. Harç tutarları bakanlık tarifesine göre ayrıca tahsil edilir.</p>
 
         <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl border border-[#EFEAE0] p-8 text-center relative shadow-sm" style={{ borderTop: "3px solid #C9952B" }}>
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C9952B] text-[#0B1D3A] text-xs px-4 py-1 rounded-full font-medium">Tek Seferlik Ödeme</div>
+          <div className="bg-white rounded-2xl border-2 border-[#C9952B]/30 p-8 text-center relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C9952B] text-[#0B1D3A] text-xs px-4 py-1 rounded-full">Tek Seferlik Ödeme</div>
             <div className="mt-2 mb-1">
               <span className="text-4xl text-[#0B1D3A]">7.000 ₺</span>
               <span className="text-[#5A6478] text-base">'den başlayan fiyatlarla</span>
@@ -373,19 +380,18 @@ export function LandingPage() {
       <section className="bg-white py-20 border-t border-[#0B1D3A]/8" id="referanslar">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2.5">Referanslar</div>
-            <h2 className="text-[#0B1D3A] mb-2.5 text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Bize güvenen firmalar</h2>
-            <p className="text-[#6B7280] max-w-xl mx-auto">
-              <span className="text-[#0B1D3A] font-medium">300'den fazla</span> müteahhit firmaya hizmet verdik, <span className="text-[#0B1D3A] font-medium">400'den fazla</span> başarılı başvuru tamamladık.
+            <h2 className="text-2xl md:text-3xl text-[#0B1D3A] mb-3">Referanslarımız</h2>
+            <p className="text-[#5A6478] max-w-xl mx-auto">
+              <span className="text-[#0B1D3A]">300'den fazla</span> müteahhit firmaya hizmet verdik, <span className="text-[#0B1D3A]">400'den fazla</span> başarılı başvuru tamamladık.
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {visibleRefs.map((r, i) => {
               const colors = [
-                "bg-[#0B1D3A]", "bg-[#1B3358]", "bg-[#264773]", "bg-[#0B1D3A]",
-                "bg-[#1B3358]", "bg-[#264773]", "bg-[#0B1D3A]", "bg-[#1B3358]",
-                "bg-[#264773]", "bg-[#0B1D3A]", "bg-[#1B3358]", "bg-[#264773]",
+                "bg-[#0B1D3A]", "bg-[#1e3a8a]", "bg-[#7c3aed]", "bg-[#0891b2]",
+                "bg-[#059669]", "bg-[#d97706]", "bg-[#dc2626]", "bg-[#6366f1]",
+                "bg-[#0d9488]", "bg-[#9333ea]", "bg-[#2563eb]", "bg-[#c026d3]",
               ];
               const initials = r.firma
                 .split(" ")
@@ -397,7 +403,7 @@ export function LandingPage() {
               return (
                 <div
                   key={i}
-                  className="bg-[#FBFAF7] rounded-xl px-4 py-3.5 border border-[#EFEAE0] hover:border-[#C9952B]/40 transition-colors"
+                  className="bg-[#F8F7F4] rounded-xl px-4 py-3.5 border border-[#0B1D3A]/5 hover:border-[#C9952B]/30 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-9 h-9 rounded-lg ${colorClass} flex items-center justify-center shrink-0 mt-0.5`}>
@@ -435,9 +441,8 @@ export function LandingPage() {
       {/* Mevzuat */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20" id="mevzuat">
         <div className="text-center mb-12">
-          <div className="text-[#C9952B] text-[11px] tracking-[0.1em] uppercase mb-2.5">Yasal Dayanak</div>
-          <h2 className="text-[#0B1D3A] mb-2.5 text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Mevzuat ve yönetmelikler</h2>
-          <p className="text-[#6B7280] max-w-xl mx-auto">Yetki belgesi sürecinde dayanak oluşturan güncel mevzuat bilgileri.</p>
+          <h2 className="text-2xl md:text-3xl text-[#0B1D3A] mb-3">Mevzuat & Yasal Dayanak</h2>
+          <p className="text-[#5A6478] max-w-xl mx-auto">Yetki belgesi başvuru sürecinde dayanak oluşturan güncel mevzuat bilgileri.</p>
         </div>
 
         <div className="max-w-3xl mx-auto space-y-4">
@@ -472,17 +477,22 @@ export function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative bg-[#0B1D3A] py-16">
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C9952B]" />
+      <section className="bg-gradient-to-br from-[#0B1D3A] via-[#122A54] to-[#0B1D3A] py-16">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-white mb-4 text-2xl md:text-3xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400 }}>Yetki belgenizi almaya hazır mısınız?</h2>
+          <h2 className="text-2xl md:text-3xl text-white mb-4">Yetki Belgenizi Almaya Hazır mısınız?</h2>
           <p className="text-white/60 mb-8">Sınıf tayini analizinizi başlatın, profesyonel ekibimizle başvurunuzu tamamlayın.</p>
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => navigate("/hizli-hesap")}
               className="bg-[#C9952B] hover:bg-[#B8862A] text-[#0B1D3A] px-10 py-4 rounded-xl text-base inline-flex items-center gap-2 transition-colors"
             >
               Analize Başla <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigate("/hizli-hesap")}
+              className="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-8 py-4 rounded-xl text-base inline-flex items-center gap-2 transition-colors"
+            >
+              Ücretsiz Analiz Talebi
             </button>
           </div>
         </div>
